@@ -1,0 +1,8 @@
+Data locality :
+    La localité spatial est préféré si la tailles des lignes/blocs de caches est grande.
+    → Sinon c'est la localité temporelle qui est préférée.
+
+
+
+Bibliothèques :
+-Pour le calcul scientifique, utilisation de la GSL : GNU Scientific Library

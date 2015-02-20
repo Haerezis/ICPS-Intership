@@ -1,0 +1,44 @@
+Devrais-je trier par tableau ?
+    Statement
+        → Array A
+            → self
+            → group
+            → ...
+        → Array B
+        ...
+        → Array C
+        ...
+car au final, la localité se fait "par" tableau, autant séparé des le débuts les données (au lieu de faire des listes non ordonnées).
+
+Caractéristiques intéressantes à "stocker" d'un reuse d'un tableau d'un statement :
+    
+    par tableau/accès (self-*) :
+     → sa catégorie (temporal, spatial)
+     → H (Access_function(î) = Hî+ĉ)
+     → espace vectoriel de reuse (reuse vector space)
+    
+    par groupe de tableau/accès/uniformly generated set (group-*) :
+     → sa catégorie (temporal, spatial)
+     → cardinal du groupe
+     → H (Access_function(î) = Hî+ĉ)
+     → son espace vectoriel (reuse vector space)
+
+    par partition de tableau/accès (RefGroup) → comment le calculer ?
+     → cardinal de la partition
+     → RefCost/LoopCost algorithme.
+
+Oui mais comment ? :
+     → le nombre d'accès à chaque case mémoire des tableaux (Ehrhart polynomials) (Loechner)
+            → par acces ou par "uniformly generated set" (ou les deux) ?
+
+
+Maybe:
+     → son facteur potentiel (potential reuse factor) (Wolf91)
+            → comment le calculer (pas de méthode donné) ?
+     → Acces par itération (basé sur le "localized iteration space" L, la tailles des lignes de caches "l" et la taille des blocks de tiling "B") (Wolf91)
+
+
+
+Nope :
+     → Nombre d'itération,d'accès à d'autre données, entre 2 utilisations de la donnée (stride)
+        → Lié au scattering, pas au statement directement

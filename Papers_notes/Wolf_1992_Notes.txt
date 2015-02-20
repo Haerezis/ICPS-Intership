@@ -1,0 +1,83 @@
+Improving locality and parallelism in nested loops - Notes
+
+Chapter 1
+    Introduction
+        50% d'augmentation de la rapidité des CPU par an contre 7% pour la DRAM.
+        → La latence entre la RAM et le CPU ne va faire qu'augmenter avec le temps.
+Chapter 2
+    Unimodular transformation : transformations qui peuvent être représentées comme
+    matrices unimodulaire.
+    [48]
+
+Chapitre 4
+    p108 : locality information extraction
+    p110 :
+        reuse : le fait qu'une data est accédé/utilisé durant plusieurs itération
+            → si la donné n'est plus dans le cache, le reuse est inutile et néfaste
+        localité : c'est quand il y a reuse ET que la donné est tjs dans le cache.
+
+    p110/122 : Section importante
+        - Reference Windows, 1988 Gannon, Jalby and Gallivan [30]
+
+        - uniformly generated (p114)
+    
+
+
+        [Question]
+            0)self/group spatial : pourquoi particulièrement la dernière ligne (contrainte de la dernière dimension du tableau) est retiré?
+
+            1)Localized iteration space (p111) :
+            → Lié à l'exploitation du reuse → lié au tiling?
+                                                → différent si les boucles ont été transfo ou non?
+                                            → ou bien directement/juste lié à la taille du cache?
+                                            → comment noté si on ne connait pas L ni la cache size?
+            
+            3)p117, Self-Spatial : all but the row index must be identical for a reference A[Hi+c]?
+
+            4)Group reuse inutile dans notre cas (car l'analyse ne porte pas que sur une instruction)?
+
+            5)Memory access minimisation : accès à la RAM ou aussi au cache?
+
+        [Réponse]
+            0)Car la réutilisation spatial est porté possiblement par toute les boucles sauf
+            l'innermost loop (donc la dernière ligne de la matrice ne doit donner aucune contrainte).
+
+            1)On peut maximiser le reuse en essayant tout les L et voir lequel est le meilleurs.
+            Cela donnera les boucles qui permettraient de porter le plus de localité (généralement grace à du tiling).
+            Le cache size n'est pas nécessaire, mais B la taille du tile l'est.
+
+            3) Pour qu'il y ait self-spatial, il faut que tout les indexes du tableaux soit identique,
+            sauf celui de la boucle du dessus.
+
+            4)Non car il peut être intéressant de savoir qu'un statement ait du reuse avec d'autre statement (et qu'il est donc
+            lié à eux).
+
+            5)Accès RAM, pas cache.
+
+
+
+Info d'un reuse :
+ → sa catégorie (self-temporal, self-spatial ...)
+ → son espace vectoriel (reuse vector space) (la direction est incluse dans l'espace vectoriel)
+ → son facteur potentiel (potential reuse factor)
+
+ - Nombre d'itération,d'accès à d'autre données, entre 2 utilisations de la donnée (stride)
+ - Nombre de d'accès à la mémoire par l'ensemble uniformément généré (uniformly generated set).
+ - Le type de la reuse
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+M. E. Wolf and M. S. Lam. A data locality optimizing algorithm. In Proceedings of the SIGPLAN '91 Conference on Programming Language Design and Implementation, pages 30-44, June 1991. 

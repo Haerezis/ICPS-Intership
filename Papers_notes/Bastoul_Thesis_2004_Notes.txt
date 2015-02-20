@@ -1,0 +1,26 @@
+1)
+    1.4)
+        which loops carry the most reuse → which references generate the most reuse (p52)
+
+        uniformly generated references : bon quand les références font parties de la même instruction, trop restrictif dans le cas contraire.
+
+        [Question]
+        1)ordonnancement de l'importance des reuses ? self-temporal > self-spatial?(p52;53)
+        2)contrary to a common belief ... program code ... fits the polyhedral model (p53)
+        3)min/max affine? (p59)
+
+
+        [Réponse]
+        1)Il n'y a pas de réponse définitive à cette question.
+        2)
+        3)min et max sont des fonctions affines partielles
+
+    3)
+        [Question]
+            1)Figure 3.5 p75
+            2)What the actual fuck figure 3.10 p82
+
+        [Réponse]
+            2)Les axes i et j sont inversés il semblerait.
+
+    4)
