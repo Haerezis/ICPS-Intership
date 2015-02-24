@@ -37,11 +37,11 @@
 \usepackage{amsmath,amsfonts,amsthm} % Math packages
 \usepackage[pdftex]{graphicx}   
 \usepackage{url}
-
+\usepackage{listings}
 
 %%% Custom sectioning
 \usepackage{sectsty}
-\allsectionsfont{\normalfont}
+\allsectionsfont{\normalfont\bfseries}
 
 
 %%% Custom headers/footers (fancyhdr package)
@@ -90,10 +90,158 @@
 
 \clearpage
 \section*{Introduction}
-Many programs spend a lot of execution time inside nested loops
-\section{Polyhedral model}
+Many computation-intensive programs spend a very large amount of their execution
+time inside nested loops. Thus, loop nest optimization is one of the major approach used
+for program optimisation.
+
+To represent the loop nest, you can use the Polyhedral Model, a powerful mathematical model
+that allows to express loop nest as union of polytopes and loop optimizations as
+transformation of these polytopes.
+
+The game is to find the "good" polytope transformations to end up with
+transformed polytopes representing loop nest (which doesn't violate dependences) 
+that can be parallelized, vectorized, tiled, etc. whereas the original loop nest couldn't.
+
+The Polyhedral Model is really good with short and simple codes, but struggle with
+large and complex codes.
+%TODO : pourquoi ? (reformuler en évitant de copier le sujet de stage...)
+
+We would like to address these issues by proposing a new technique : before any
+high-level optimizations are used on the source code, a first pass is applied (our pass),
+aggregating "near behaving" statements together using their profile.
+"Near behaving" statements describe statements that have similar properties,
+like data reuse/locality, parallelism, vectorization etc. that constitute their profile.
+
+\section*{General Informations}
+    In this report, several things should be noted :
+    \begin{itemize}
+        \item Arrays are always in Row-major order.
+        \item Code example are either in C or pseudo-code.
+    \end{itemize}
+
+\section{Polyhedral Model}
+\textbf{TODO}
+%TODO
+
 \section{Statement Profiling}
-\subsection{Data Reuse and Data Locality}
+    \subsection{Data Reuse/Locality}
+        In this section, we will explain the basics behind data reuse/locality and
+        then talk about the different metrics found in the literature used to evaluate
+        and quantifying data reuse and why they where selected or not for the statements profile.
+
+        %Le problème étant que dans notre cas, seul la quantification de reuse nous intéresse
+        %la locality étant lié au scattering, il nous intéresse moins.
+
+        \subsubsection{Difference between Reuse and Locality}
+            It's important to differentiate \textit{reuse} from \textit{locality}.
+            We say that there is \textit{reuse} for a data when this data is
+            access multiple time during the execution of a loop nest, during
+            the same iteration or not. It can be from different references or different statements.
+            
+            When there is reuse, it's possible (but not guaranteed) to have
+            \textit{locality}. We say that there is \textit{locality} when the
+            reused data remains in memory hierarchy level targeted 
+            (eg : the CPU cache in our case) between 2 reuses.
+            For that to be the case, the amount of other data accessed between the
+            2 reuses must not exceed the cache size, or else the reused data will be
+            evicted from the cache, causing a cache miss and forcing the cache
+            to fetch the data from the RAM (and RAM have higher latency compared to CPU cache).
+
+
+            Thus, we can say that the \textit{reuse} is linked to the way indexing
+            functions (for array references) are written, whereas \textit{locality} is
+            inherent to the iterations order/the way the loops are written.
+
+        \subsubsection{Types of Reuse}
+\begin{lstlisting}[frame=single, language=C, caption=Reuse example, label={lst:reuse_example}]
+for(i=0; i<N ; i++)
+    for(j=0; j<N ; j++)
+    {
+        A[i][j] = B[i] + B[i+1];
+        C[i][j] = B[i+2] * 2;
+    }
+            \end{lstlisting}
+            \paragraph{Self-Temporal}
+                Self-Temporal reuse occurs when the same reference access the same
+                data location.
+                
+                For example, in Listing \ref{lst:reuse_example}, the reference \verb'B[i]' carry Self-Temporal
+                reuse :\verb'B[0]',\verb'B[1]',\verb'B[2]' ... \verb'B[N-1]' are accessed
+                \textit{j} times by the same reference \verb'B[i]'.
+                And for the same reason, \verb'B[i+1]' and \verb'B[i+2]' also carry Self-Temporal reuse.
+
+            \paragraph{Self-Spatial}
+                Self-Spatial reuse occurs when the same reference access the same
+                line in an array (when in row-major). Especially, the space between
+                two accessed data location should not be greater than a cache line size,
+                or else there won't be any spatial locality.
+
+                For example, in Listing \ref{lst:reuse_example}, the reference \verb'A[i][j]' carry
+                Self-Spatial reuse.
+
+                Self-Temporal reuse can be considered as a special case of
+                Self-Spatial reuse : accessing the same data location mean that
+                the same array line is also accessed.
+            \paragraph{Group-Temporal}
+                Group-Temporal reuse occurs when different references access the same
+                data location. It can occur inside a same statement or across different
+                statements.
+
+                For example, in Listing \ref{lst:reuse_example}, the reference
+                \verb'B[i]', \verb'B[i+1]' and \verb'B[i+2]' carry Group-Temporal :
+                the data accessed by \verb'B[i+2]' when $i=M$ will be access by
+                \verb'B[i+1]' when $i=M+1$ and by \verb'B[i]' when $i=M+2$.
+
+            \paragraph{Group-Spatial}
+                Group-Spatial reuse occurs when different references access the same
+                line in an array (when in row-major). Again, the space between
+                two accessed data location should not be greater than a cache line size,
+                or else there won't be any spatial locality.
+                
+                For example, in Listing \ref{lst:reuse_example}, the reference
+                \verb'B[i]', \verb'B[i+1]' and \verb'B[i+2]' carry Group-Spatial :
+                they all access to different data location, but on the same line.\\
+                \\
+
+                So as you can see, a single reference can carry multiple type of reuse.
+                A statement being generally composed of multiple references, it 
+                can be hard to automatically favor some statements instead of others.
+
+        \subsubsection{Reuse Vector Space}
+            The notion of Reuse Vector Space come from \cite{Wolf'91}
+
+    \subsection{Parallelism}
+    \subsection{Vectorization}
+    \subsection{Tiling Hyperplane}
+    \subsection{Register Pressure}
+
+\section{Aggregating "Near Behaving" Statements Using Profiling}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 %\begin{align} 
 %    \begin{split}
 %    (x+y)^3     &= (x+y)^2(x+y)\\
@@ -109,4 +257,6 @@ Many programs spend a lot of execution time inside nested loops
 %    A_{21} & A_{22}
 %    \end{bmatrix}
 %\end{align}
+\bibliographystyle{plain}
+\bibliography{biblio}
 \end{document}
