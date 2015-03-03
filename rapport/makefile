@@ -10,4 +10,4 @@ Report:Report.tex
 	evince $@.pdf &
 
 clean:
-	rm -rf Report.pdf *.aux *.log *.bbl *.blg
+	rm -rf Report.pdf *.aux *.log *.bbl *.blg *.toc

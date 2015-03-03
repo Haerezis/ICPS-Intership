@@ -38,6 +38,7 @@
 \usepackage[pdftex]{graphicx}   
 \usepackage{url}
 \usepackage{listings}
+\usepackage{arydshln}
 
 %%% Custom sectioning
 \usepackage{sectsty}
@@ -55,6 +56,7 @@
 \renewcommand{\footrulewidth}{0pt}              % Remove footer underlines
 \setlength{\headheight}{13.6pt}
 
+\newtheorem{defn}{Definition}[section]
 
 %%% Equation and float numbering
 \numberwithin{equation}{section}        % Equationnumbering: section.eq#
@@ -64,6 +66,7 @@
 
 %%% Maketitle metadata
 \newcommand{\horrule}[1]{\rule{\linewidth}{#1}}     % Horizontal rule
+%\DeclareMathOperator{\dim}{dim}
 
 \title{
         %\vspace{-1in}  
@@ -89,7 +92,12 @@
 \thispagestyle{empty}
 
 \clearpage
+
+\tableofcontents
+\clearpage
+
 \section*{Introduction}
+\addtocontents{toc}{\protect\contentsline{section}{Introduction}{}}
 Many computation-intensive programs spend a very large amount of their execution
 time inside nested loops. Thus, loop nest optimization is one of the major approach used
 for program optimisation.
@@ -100,7 +108,7 @@ transformation of these polytopes.
 
 The game is to find the "good" polytope transformations to end up with
 transformed polytopes representing loop nest (which doesn't violate dependences) 
-that can be parallelized, vectorized, tiled, etc. whereas the original loop nest couldn't.
+that can be parallelized, vectorized, tiled, etc. if with the original loop nest you couldn't.
 
 The Polyhedral Model is really good with short and simple codes, but struggle with
 large and complex codes.
@@ -113,20 +121,276 @@ aggregating "near behaving" statements together using their profile.
 like data reuse/locality, parallelism, vectorization etc. that constitute their profile.
 
 \section*{General Informations}
+\addtocontents{toc}{\protect\contentsline{section}{General Informations}{}}
+
     In this report, several things should be noted :
     \begin{itemize}
-        \item Arrays are always in Row-major order.
+        \item Arrays used in code example are always in Row-major layout.
         \item Code example are either in C or pseudo-code.
     \end{itemize}
 
 \section{Polyhedral Model}
-\textbf{TODO}
-%TODO
+The polyhedral model is (as explained in \cite{Bas'12}) a mathematical model that allows to represent program
+part as union of polytopes and affine sets. Program parts that can fit the model
+are called \textit{static control parts} or \textit{SCoPs} for short.
+Scops are generally loop-based, and need to have affine loop bounds, conditions and
+array subscripts to fit the polyhedral model.
+
+The polyhedral model consist of three mathematical objects based on unions of relations :
+\begin{itemize}
+    \item The \textit{Iteration Domain}, that provide the set of all the iteration scanned
+        %parcouru
+        by a specific statement, using affine constraints. It's these affine constraints 
+        that can be seen as a $\mathbb{Z}$-polytope.
+    \item The \textit{Scattering Relations} (or \textit{Scheduling Relations},
+        or even\textit{Mapping Relations}), that give us the ordering which
+        all the statement instances will be executed.
+    \item The \textit{Access Relations} that model read/write accesses made by
+        the different arrays and simple variables.
+\end{itemize}
+
+    \subsection{Iteration Domain}
+        To understand Iteration Domain, you must first understand what a \textit{statement instance}
+        is. A statement instance is one particular execution of a statement.
+        When a statement is located inside a loop nest, it can be associated to the value
+        of the outer-loop counters (called \textit{iterators}.
+        The Iteration Domain will be the set of the iterators of all the statement
+        instance.
+
+        Because the outer loop bound can be affine or parameterized, it is generally impossible to
+        know their actual value at compilation time. Even if we knew the value of the
+        bounds, the number of iterators could be to enormous to count them all into sets.
+        That's why the sets are expressed as a system of affine constraints.
+        These affine constraints define a $\mathbb{Z}$-polyhedron, hence the name of the model.
+        The relation used to represent the Iteration Domain is :
+        \begin{center}
+            $ \mathcal{D}_S(\vec{p}) = \left\{() \to \vec{\imath_S} \in \mathbb{Z}^{\dim(\vec{\imath_S})}
+            \middle|
+            \left[D_S\right]\begin{pmatrix}\vec{\imath} \\ \vec{p} \\ 1\end{pmatrix}
+            \geq \vec{0}
+            \right\}$
+        \end{center}
+        where $\vec{\imath}$ is the $\dim(\vec{imath})$-dimensional iteration vector and
+        $D_S \in \mathbb{Z}^{m_{\mathcal{D}_S} \times (\dim(\vec{\imath})+\dim(\vec{p})+1)}$
+        is an integer matrix where $m_{\mathcal{D}_S}$ is the number of constraints.
+        \\
+
+\begin{lstlisting}[frame=single, language=C, caption={Simple code for polyhedral model example}, label={lst:polyhedral_example}]
+        for(i=0 ; i<2*N - 1 ; i++)
+S1:         A[i] = 42;
+        for(i=0 ; i<N ; i++)
+            for(j=0 ; j<N ; j++)
+S2:             B[i][j] += 42;
+\end{lstlisting}
+        
+        For example, in Listing~\ref{lst:polyhedral_example}, we have for
+        S1 and S2 the iteration domain :
+        \begin{itemize}
+            \item[]$ \mathcal{D}_{S1}(N) = \left\{() \to \begin{bmatrix}i\end{bmatrix} \in \mathbb{Z} \middle|
+            \left[\begin{array}{c:c:c}
+                    1 & 0 & 0 \\
+                    -1 & 2 & -2
+            \end{array}\right]
+            \left(\begin{array}{c}
+                    i \\ \hdashline
+                    N \\ \hdashline
+                    1 
+            \end{array}\right)
+            \geq \vec{0}
+            \right\} $,
+        
+            \item[]$ \mathcal{D}_{S2}(N) = \left\{() \to \begin{bmatrix}i\end{bmatrix} \in \mathbb{Z} \middle|
+            \left[\begin{array}{c:c:c:c}
+                    1 & 0 & 0 & 0\\
+                    -1 & 0 & 1 & -1\\
+                    0 & 1 & 0 & 0\\
+                    0 & -1 & 1 & -1
+            \end{array}\right]
+            \left(\begin{array}{c}
+                    i \\
+                    j \\ \hdashline
+                    N \\ \hdashline
+                    1 
+            \end{array}\right)
+            \geq \vec{0}
+            \right\} $.
+        \end{itemize}
+
+        In the case of \textit{if-then-else} enclosed statements, the iteration domain
+        for the statement will be an union of disjoint polytope, each representing a part
+        of the \textit{if-then-else} condition.
+
+    \subsection{Scattering Relations}
+        Defining the domain of iteration is great, but it doesn't give us any information
+        on the order in which will be executed each statement instance.
+
+        There is different type of ordering relations :
+        \begin{description}
+            \item[Scheduling] is about ordering the statement instances in time by
+                giving them a logical date vector indicating when each will be executed.
+                The data vector is generally read in \textit{lexicographically} order, for example
+                $(1,2,3)$ is executed before $(1,2,4)$ but after $(1,1,4)$.
+            \item[Allocation] or \textbf{placement} is about ordering statement instances
+                in space by assigning to each statement instances a logical stamp
+                indicating the processor number in which it will be executed.
+                Statement instances not sharing the same logical stamp can be
+                executed in parallel in different processor.
+        \end{description}
+
+        It is possible to express each ordering relations as separate relation,
+        but it is also possible to aggregating them together : the result would be
+        a relation between the iterators set and a set of ordering vector which
+        would have some dimensions allocated to time ordering (scheduling) and
+        some other to space ordering (allocation).
+
+        For a statement $S$, the scattering relation can be written as follow :
+        \begin{center}
+            $\theta_S(\vec{p}) = \left\{\vec{\imath_S} \to \vec{t_S} \in \mathbb{Z}^{\dim(\vec{\imath_S})}\times\mathbb{Z}^{\dim(\vec{t_S})}
+            \middle|
+            \left[T_S\right]\begin{pmatrix}\vec{t_S}\\ \vec{\imath} \\ \vec{p} \\ 1\end{pmatrix}
+            \geq \vec{0}
+            \right\}$,
+        \end{center}
+        where $\vec{\imath}$ is the $\dim(\vec{\imath})$-dimensional iteration vector
+        and $T_S \in \mathbb{Z}^{m_{\theta_S}\times(\dim(\vec{\imath_S})+\dim(\vec{t_S})+\dim(\vec{p})+1)}$
+        is an integer matrix where $m_{\theta_S}$ is the number of constraints.
+
+        For example, for Listing~\ref{lst:polyhedral_example}, we have for S1 and S2
+        statement the original scattering of the program :
+        \begin{itemize}
+            \item[]
+                $\theta_{S1}(N) = \left\{(i) \to \begin{pmatrix}t^{1}_{S1}\\t^{2}_{S1}\\t^{3}_{S1}\end{pmatrix} \in
+                    \mathbb{Z}\times\mathbb{Z}^{3}
+                    \middle|
+                    \left[\begin{array}{ccc:c:c:c}
+                            -1 & 0 & 0 & 0 & 0 & 0 \\
+                            0 & -1 & 0 & 1 & 0 & 0 \\ 
+                            0 & 0 & -1 & 0 & 0 & 0
+                    \end{array}\right]
+                    \left(\begin{array}{c}
+                        t^{1}_{S1} \\
+                        t^{2}_{S1} \\
+                        t^{3}_{S1} \\ \hdashline
+                        i \\ \hdashline
+                        N \\ \hdashline
+                        1
+                    \end{array}\right)
+                    = \vec{0}
+                    \right\}$,\\
+                    which can be simplify to $\theta_{S1}(N)(i)=\begin{pmatrix}0\\i\\0\end{pmatrix}$.
+            \item[]
+                $\theta_{S2}(N) = \left\{(i) \to \begin{pmatrix}t^{1}_{S2}\\t^{2}_{S2}\\t^{3}_{S2}\\t^{4}_{S2}\\t^{5}_{S2}\end{pmatrix} \in
+                    \mathbb{Z}\times\mathbb{Z}^{3}
+                    \middle|
+                    \left[\begin{array}{ccccc:cc:c:c}
+                            -1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1\\
+                            0 & -1 & 0 & 0 & 0 & 1 & 0 & 0 & 0\\ 
+                            0 & 0 & -1 & 0 & 0 & 0 & 0 & 0 & 0\\
+                            0 & 0 & 0 & -1 & 0 & 0 & 1 & 0 & 0\\ 
+                            0 & 0 & 0 & 0 & -1 & 0 & 0 & 0 & 0
+                    \end{array}\right]
+                    \left(\begin{array}{c}
+                        t^{1}_{S2} \\
+                        t^{2}_{S2} \\
+                        t^{3}_{S2} \\
+                        t^{4}_{S2} \\
+                        t^{5}_{S2} \\ \hdashline
+                        i \\ \hdashline
+                        N \\ \hdashline
+                        1
+                    \end{array}\right)
+                    = \vec{0}
+                    \right\}$,\\
+                    which can be simplify to $\theta_{S2}(N)\begin{pmatrix}i\\j\end{pmatrix}=\begin{pmatrix}0\\i\\0\\j\\0\end{pmatrix}$.
+        \end{itemize}
+        The first dimension for S1 is 0 and for S2 is 1 : it is to ensure that S2
+        is always executed after S1.
+        In our example, it doesn't matter because S1 and S2 doesn't have any dependence
+        whatsoever, and they could be run in parallel without problem, but for the sake
+        of the example, we've imposed that S1 is executed before S2.
+
+    \subsection{Access Relations}
+        The \textit{Access Relations} models the memory access of the different
+        array references in a statement. It map the statement instances to memory locations
+        for every array reference in the statement. Non-array reference can be seen as
+        0-dimensional array.
+
+        The access relation can be written in the general form :
+        \begin{center}
+            $\mathcal{A}_{S,r}(\vec{p}) = 
+            \left\{
+                \vec{\imath_S} \to \vec{a}_{S,r} \in \mathbb{Z}^{\dim(\vec{\imath_S})}\times\mathbb{Z}^{\dim(\vec{a}_{S,r})}
+                \middle|
+                \left[A_{S,r}\right]\left(\begin{array}{c}\vec{a}_{S,r}\\\vec{\imath_S}\\\vec{p}\\1\end{array}\right)
+                \geq \vec{0}
+            \right\}$
+        \end{center}
+        where 
+        \begin{itemize}
+            \item $r$ is the number of the reference in the statement (every references are
+                numbered, from left to right generally),
+            \item $\vec{\imath}$ is the $\dim(\vec{\imath})$-dimensional iteration vector
+            \item $T_S \in \mathbb{Z}^{m_{\theta_S}\times(\dim(\vec{\imath_S})+\dim(\vec{t_S})+\dim(\vec{p})+1)}$
+                is an integer matrix where $m_{\theta_S}$ is the number of constraints.
+        \end{itemize}
+
+        The read or write nature of the memory access is not expressed in this form,
+        and need to be given (for example, to compute dependences).
+
+        For example, for Listing~\ref{lst:polyhedral_example}, we have for S1 and S1 the
+        access relation :
+        \begin{itemize}
+            \item[]
+                $
+                \mathcal{A}_{S1,1}(N) = 
+                \left\{
+                \begin{pmatrix}i\end{pmatrix} \to \left(a_{S1,1}\right) \in \mathbb{Z}\times\mathbb{Z}
+                    \middle|
+                    \left[\begin{array}{c:c:c:c}-1 & 1 & 0 & 0 \end{array}\right]
+                    \left(\begin{array}{c}a_{S1,1}\\\hdashline i\\\hdashline N\\\hdashline 1\end{array}\right)
+                    = \vec{0}
+                \right\}
+                $
+            
+            \item[]
+                $
+                \mathcal{A}_{S2,1}(N) = 
+                \left\{
+                \begin{pmatrix}i\end{pmatrix} \to \left(a_{S2,1}\right) \in \mathbb{Z}\times\mathbb{Z}
+                    \middle|
+                    \left[\begin{array}{c:c:c:c:c}-1 & 1 & 1 & 0 & 0 \end{array}\right]
+                    \left(\begin{array}{c}a_{S2,1}\\\hdashline i\\\hdashline j\\\hdashline N\\\hdashline 1\end{array}\right)
+                    = \vec{0}
+                \right\}
+                $
+        \end{itemize}
+
+        Because S1 and S2 only have one reference, there's only one access relation for
+        each of them.
+
+%    \subsubsection{Data Dependences}
+%            We can say that if there is no dependences between two statements, there
+%            is no reuse possible between them.
+%            %TODO
+
+    \subsection{OpenScop Framework}
+        OpenScop~\cite{openscop} is an open specification that define a file format
+        and a set of data structures to represent a static control part (SCoP).
+
+        OpenScop format is intended to be a stable bridge between polyhedral tools
+        and optimizers allowing interchangeable tools and flexible toolchains.
+
+        A library named \textit{osl} is provided to read/write OpenScop files
+        and manipulate the different data structures the specification define.
+        The file format as well as the library has been designed to accept extensions.
+
+        The tool performing our optimization pass uses OpenScop as input and output
+        format.
 
 \section{Statement Profiling}
     \subsection{Data Reuse/Locality}
         In this section, we will explain the basics behind data reuse/locality and
-        then talk about the different metrics found in the literature used to evaluate
+        then talk about the different metrics and methods found in the literature used to evaluate
         and quantifying data reuse and why they where selected or not for the statements profile.
 
         %Le problème étant que dans notre cas, seul la quantification de reuse nous intéresse
@@ -153,6 +417,7 @@ like data reuse/locality, parallelism, vectorization etc. that constitute their 
             inherent to the iterations order/the way the loops are written.
 
         \subsubsection{Types of Reuse}
+            
 \begin{lstlisting}[frame=single, language=C, caption=Reuse example, label={lst:reuse_example}]
 for(i=0; i<N ; i++)
     for(j=0; j<N ; j++)
@@ -160,7 +425,8 @@ for(i=0; i<N ; i++)
         A[i][j] = B[i] + B[i+1];
         C[i][j] = B[i+2] * 2;
     }
-            \end{lstlisting}
+\end{lstlisting}
+
             \paragraph{Self-Temporal}
                 Self-Temporal reuse occurs when the same reference access the same
                 data location.
@@ -206,9 +472,147 @@ for(i=0; i<N ; i++)
                 So as you can see, a single reference can carry multiple type of reuse.
                 A statement being generally composed of multiple references, it 
                 can be hard to automatically favor some statements instead of others.
-
         \subsubsection{Reuse Vector Space}
-            The notion of Reuse Vector Space come from \cite{Wolf'91}
+            The notion of Reuse Vector Space come from Wolf et. al.\cite{Wolf'91} and describe
+            the vector subspace of the Iteration vector space where the reuse of
+            a reference can be taken advantage to induce locality.
+            There is as many reuse vector space as there is type of reuse.
+
+\begin{lstlisting}[frame=single, language=C, caption=Simple example, label={lst:simple_example}]
+for(i=0; i<N ; i++)
+    for(j=0; j<N ; j++)
+    {
+        f(A[i], A[j]);
+    }
+\end{lstlisting}
+
+            For example, in Listing \ref{lst:simple_example}, with the Iteration
+            space being spanned by $\{(1,0),(0,1)\}$, the self-spatial reuse vector space of
+            \verb'A[i]' is $\{(1,0)\}$ (ie the {\it i} loop), and the one of \verb'A[j]' is $\{(0,1)\}$
+            (ie the {\it j} loop).
+
+            Wolf et. al. use the concept of uniformly generated references proposed
+            by Gannon et. al.\cite{Gannon:1988:SCL:50454.50460} for estimating reference
+            windows :
+            \begin{defn}
+                Let $n$ be the depth of a loop nest, and $d$ be the dimensionality of
+                an array $A$. Two references $A[\vec{f}(\vec{\imath})]$ and
+                $A[\vec{g}(\vec{\imath})]$, where $\vec{f}$ and $\vec{g}$ are indexing
+                functions $Z^{n} \rightarrow Z^{n}$, are called \textbf{uniformly generated} if :
+                \begin{center}
+                    $\vec{f}(\vec{\imath}) = H\vec{\imath}+\vec{c}_f$ and $\vec{g}(\vec{\imath}) = H\vec{\imath}+\vec{c}_g$
+                \end{center}
+                where $H$ is a linear transformation and $\vec{c}_f$ and $\vec{c}_g$ are constant vectors.
+            \end{defn}
+            
+            We can partition references into equivalence class, called \textit{uniformly generated sets},
+            when the references operate on the same array, and have the same $H$.
+            You can see $H$ as a part of one of the access function (in the Polyhedral Model representation) of this statement :
+            it's the access function matrix without the part handling the constant vector.
+
+            For example in Listing \ref{lst:reuse_example}, $B[i]$,$B[i+1]$ and $B[i+2]$ can be each written as
+            \begin{center}
+                $
+                \begin{bmatrix}
+                    1 & 0
+                \end{bmatrix}
+                \begin{bmatrix}
+                    i\\
+                    j
+                \end{bmatrix}
+                +
+                \begin{bmatrix}
+                    0
+                \end{bmatrix}
+                $,\\
+                $
+                \begin{bmatrix}
+                    1 & 0
+                \end{bmatrix}
+                \begin{bmatrix}
+                    i\\
+                    j
+                \end{bmatrix}
+                +
+                \begin{bmatrix}
+                    1
+                \end{bmatrix}
+                $,\\
+                $
+                \begin{bmatrix}
+                    1 & 0
+                \end{bmatrix}
+                \begin{bmatrix}
+                    i\\
+                    j
+                \end{bmatrix}
+                +
+                \begin{bmatrix}
+                    2
+                \end{bmatrix}
+                $.
+            \end{center}
+            As you can see, all these reference share the same $H=\begin{bmatrix}1 & 0\end{bmatrix}$,
+            so they all belong to the same class.\\
+            Of course, $B[i]$,$B[i+1]$ and $B[i+2]$ belong to different statement, and in
+            our pass, a uniformly generated set would be created for each statement.
+            But in the end, the goal of our pass would be to aggregate statements having the
+            same uniformly generated set.
+
+            %TODO
+
+        \subsubsection{The Simple Algorithm}
+            The \textit{Simple Algorithm}~\cite{Kennedy94maximizingloop} is a
+            optimization algorithm that improve data locality via Loop Fusion.
+            The idea is to fusion vertices of a directed graph when these vertices
+            are connected by non-fusion-preventing arcs.
+            In this graph, the vertices represent the different loop nests of a program part,
+            and the arcs represent data dependences between statements of different loop nests.
+
+            If the dependence is fusion-preventing~\cite{Bacon:1994:CTH:197405.197406} or if the loop headers are incompatible,
+            the arc representing the dependence will be marked fusion-preventing.
+
+            The algorithm is a modification of the greedy algorithm that partition
+            the nodes of the graph without sequentializing a parallel node/loop, and
+            is the following (directly taken from~\cite{Kennedy94maximizingloop}:
+            \medskip
+
+            ``  In the greedy partition graph, if there exists two partitions $g_1$
+                and $g_2$ with a directed edge $(g_1,g_2)$, then no node in $g_2$
+                may be legally placed in $g_1$ or the greedy algorithm would have put it
+                there. However, it may be safe and profitable to move nodes in $g_1$
+                down into $g_2$.
+
+                We determine if it is safe and profitable to move $n \in g_l$ down
+                into another partition $g_h$ as follows.
+                \begin{description}
+                    \item [Safety.] A node $n \in g_l$ may move to $g_h$ \textit{iff} it
+                        has no successors in $g_l$ and there is no fusion-preventing
+                        edge $(n,r)$ such that $r \in g_h$ or $r \in g_k$ where
+                        $g_k$ must precede $g_h$.
+                    \item [Profitability.] Compute a sum of edges $(m,n), m \in g_l$
+                        and a sum for each $g_h$ of edges $(n,p)$ such that $p \in g_h$
+                        and $n$ may be safely moved into $g_h$. Pick the partition
+                        $g$ with the biggest sum. If $g \neq g_l$, move $n$ down into $g$.''
+                \end{description}
+            \bigskip
+            
+            This algorithm doesn't give us any metric or way to evaluate a statement
+            reuse, so it doesn't help use for the reuse evaluation side, but the idea
+            of a dependence graph based greedy algorithm is interesting : with statement
+            instead of loop nest being the nodes, this kind of greedy algorithm 
+            could fusion statements that are inside different loop nest in the SCoP.
+            It means we would also need to redefine the \textbf{Safety} and \textbf{Profitability}
+            notions of the algorithm.
+
+        \subsubsection{Data and Loop Transformations}
+            An algorithm that transforms a loop nest to improve cache locality
+            by a combination of loop and data transformations is presented in~\cite{Kandemir99improvingcache}.
+
+            There's not much to say about it. The goal of the algorithm is to
+            compute a transformation matrix and array layout (and the explanation is a little
+            vague), so it isn't applicable in our case and it doesn't give us any metric or way to evaluate the reuse.
+
 
     \subsection{Parallelism}
     \subsection{Vectorization}
@@ -219,44 +623,6 @@ for(i=0; i<N ; i++)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-%\begin{align} 
-%    \begin{split}
-%    (x+y)^3     &= (x+y)^2(x+y)\\
-%                    &=(x^2+2xy+y^2)(x+y)\\
-%                    &=(x^3+2x^2y+xy^2) + (x^2y+2xy^2+y^3)\\
-%                    &=x^3+3x^2y+3xy^2+y^3
-%    \end{split}                 
-%\end{align}
-%\begin{align}
-%    A = 
-%    \begin{bmatrix}
-%    A_{11} & A_{21} \\
-%    A_{21} & A_{22}
-%    \end{bmatrix}
-%\end{align}
 \bibliographystyle{plain}
 \bibliography{biblio}
 \end{document}
