@@ -1,0 +1,657 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% LaTeX Example: Project Report
+%
+% Source: http://www.howtotex.com
+%
+% Feel free to distribute this example, but please keep the referral
+% to howtotex.com
+% Date: March 2011 
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% How to use writeLaTeX: 
+%
+% You edit the source code here on the left, and the preview on the
+% right shows you the result within a few seconds.
+%
+% Bookmark this page and share the URL with your co-authors. They can
+% edit at the same time!
+%
+% You can upload figures, bibliographies, custom classes and
+% styles using the files menu.
+%
+% If you're new to LaTeX, the wikibook is a great place to start:
+% http://en.wikibooks.org/wiki/LaTeX
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Edit the title below to update the display in My Documents
+%\title{Project Report}
+%
+%%% Preamble
+\documentclass[paper=a4, fontsize=11pt]{scrartcl}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{fourier}
+
+\usepackage[english]{babel}                                                         % English language/hyphenation
+\usepackage[protrusion=true,expansion=true]{microtype}  
+\usepackage{amsmath,amsfonts,amsthm} % Math packages
+\usepackage[pdftex]{graphicx}   
+\usepackage{url}
+\usepackage{listings}
+\usepackage{arydshln}
+
+%%% Custom sectioning
+\usepackage{sectsty}
+\allsectionsfont{\normalfont\bfseries}
+
+
+%%% Custom headers/footers (fancyhdr package)
+\usepackage{fancyhdr}
+\pagestyle{fancyplain}
+\fancyhead{}                                            % No page header
+\fancyfoot[L]{}                                         % Empty 
+\fancyfoot[C]{}                                         % Empty
+\fancyfoot[R]{\thepage}                                 % Pagenumbering
+\renewcommand{\headrulewidth}{0pt}          % Remove header underlines
+\renewcommand{\footrulewidth}{0pt}              % Remove footer underlines
+\setlength{\headheight}{13.6pt}
+
+\newtheorem{defn}{Definition}[section]
+
+%%% Equation and float numbering
+\numberwithin{equation}{section}        % Equationnumbering: section.eq#
+\numberwithin{figure}{section}          % Figurenumbering: section.fig#
+\numberwithin{table}{section}               % Tablenumbering: section.tab#
+
+
+%%% Maketitle metadata
+\newcommand{\horrule}[1]{\rule{\linewidth}{#1}}     % Horizontal rule
+%\DeclareMathOperator{\dim}{dim}
+
+\title{
+        %\vspace{-1in}  
+        \usefont{OT1}{bch}{b}{n}
+        \normalfont \normalsize \textsc{University of Strasbourg} \\ [25pt]
+        \horrule{0.5pt} \\[0.4cm]
+        \huge Intermediary Internship Report \\
+        \horrule{2pt} \\[0.5cm]
+}
+\author{
+        \normalfont                                 \normalsize
+        Thomas Kuntz \\                                \normalsize
+        Master RISE \\                                \normalsize
+        UFR d'Informatique \\                                \normalsize
+        Supervisor : Cédric Bastoul\\
+}
+\date{}
+
+
+%%% Begin document
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\clearpage
+
+\tableofcontents
+\clearpage
+
+\section{Presentation of the laboratory and research team}
+This intership falls within the research conducted in the ICPS team (Parallel and Scientific
+Computing) of the ICube laboratory at the university of Strasbourg, and the CAMUS group
+(Compilation for MultiCore Architectures) at Inria, the French Institute for Research
+in Computer Science. ICPS/CAMUS focuses at providing developers with theoretical and software
+tools to develop efficient applications for parallel architectures without sacrificing
+productivity.
+
+Parallel systems are now omnipresent, from supercomputers to mobile devices,
+and their effective use requires developers to design parallel programs or to rewrite
+legacy sequential applications. However, parallel programming is still complex and out
+of reach for non experts, at either designing, writing or debugging level. To address
+this issue, ICPS/CAMUS is developing source-to-source compiler techniques for automatic
+program optimization and parallelization. Using these technologies, developers can
+continue to write sequential programs while the mapping to parallel architecture is
+computed automatically.
+
+The team has 7 faculty members and a dozen of PhD students,
+postdocs or engineers. Its members are deeply involved in European and international
+collaborations on scientific projects both with academia and industry.
+Its most renowned technical contributions in this field include
+the PolyLib library, the code generator CLooG, the dynamic optimizer VMAD or the parallelizer
+of binary programs BinPar.
+
+\section{Internship mission : High-Level Optimization Driven by Statement Profiling}
+Many computation-intensive programs spend a very large amount of their execution
+time inside nested loops. Thus, loop nest optimization is one of the major approach used
+for program optimisation.
+
+To represent the loop nest, you can use the Polyhedral Model, a powerful mathematical model
+that allows to express loop nest as union of polytopes and loop optimizations as
+transformation of these polytopes.
+
+The game is to find the "good" polytope transformations to end up with
+transformed polytopes representing loop nest (which doesn't violate dependences) 
+that can be parallelized, vectorized, tiled, etc. with better properties than the original
+polytope.
+
+The Polyhedral Model is really good with short and simple codes, but struggle with
+large and complex codes.The reason is twofold. First, polyhedral techniques exhibit
+a very high worst-case complexity which hampers its applicability to large codes.
+Second, contradicting optimization objectives may result in suboptimal global
+decisions
+
+
+We would like to address these issues by proposing a new technique : before any
+high-level optimizations are used on the source code, a first pass is applied (our pass),
+aggregating "near behaving" statements together using their profile.
+"Near behaving" statements describe statements that have similar properties,
+like data reuse/locality, parallelism, vectorization etc. that constitute their profile.
+By doing that, we hope to ease the work of the high-level optimizer by "reducing" the size
+of large and complex code, and prevent it from separating statements that should
+not be separated (for example if they have a lot of data reuse in common).
+
+\section{Work done}
+    \subsection{Learning about the polyhedral model}
+        The polyhedral model is (as explained in \cite{Bas'12}) a mathematical model that allows to represent program
+        part as union of polytopes and affine sets. Program parts that can fit the model
+        are called \textit{static control parts} or \textit{SCoPs} for short.
+        Scops are generally loop-based, and need to have affine loop bounds, conditions and
+        array subscripts to fit the polyhedral model.
+
+        The polyhedral model consist of three mathematical objects based on unions of relations :
+        \begin{itemize}
+            \item The \textit{Iteration Domain}, that provide the set of all the iteration scanned
+                %parcouru
+                by a specific statement, using affine constraints. It's these affine constraints 
+                that can be seen as a $\mathbb{Z}$-polytope.
+            \item The \textit{Scattering Relations} (or \textit{Scheduling Relations},
+                or even\textit{Mapping Relations}), that give us the ordering which
+                all the statement instances will be executed.
+            \item The \textit{Access Relations} that model read/write accesses made by
+                the different arrays and simple variables.
+        \end{itemize}
+
+            \subsubsection{Iteration Domain}
+                To understand Iteration Domain, you must first understand what a \textit{statement instance}
+                is. A statement instance is one particular execution of a statement.
+                When a statement is located inside a loop nest, it can be associated to the value
+                of the outer-loop counters (called \textit{iterators}.
+                The Iteration Domain will be the set of the iterators of all the statement
+                instance.
+
+                Because the outer loop bound can be affine or parameterized, it is generally impossible to
+                know their actual value at compilation time. Even if we knew the value of the
+                bounds, the number of iterators could be to enormous to count them all into sets.
+                That's why the sets are expressed as a system of affine constraints.
+                These affine constraints define a $\mathbb{Z}$-polyhedron, hence the name of the model.
+                The relation used to represent the Iteration Domain is :
+                \begin{center}
+                    $ \mathcal{D}_S(\vec{p}) = \left\{() \to \vec{\imath_S} \in \mathbb{Z}^{\dim(\vec{\imath_S})}
+                    \middle|
+                    \left[D_S\right]\begin{pmatrix}\vec{\imath} \\ \vec{p} \\ 1\end{pmatrix}
+                    \geq \vec{0}
+                    \right\}$
+                \end{center}
+                where $\vec{\imath}$ is the $\dim(\vec{imath})$-dimensional iteration vector and
+                $D_S \in \mathbb{Z}^{m_{\mathcal{D}_S} \times (\dim(\vec{\imath})+\dim(\vec{p})+1)}$
+                is an integer matrix where $m_{\mathcal{D}_S}$ is the number of constraints.
+                \\
+
+        \begin{lstlisting}[frame=single, language=C, caption={Simple code for polyhedral model example}, label={lst:polyhedral_example}]
+                for(i=0 ; i<2*N - 1 ; i++)
+        S1:         A[i] = 42;
+                for(i=0 ; i<N ; i++)
+                    for(j=0 ; j<N ; j++)
+        S2:             B[i][j] += 42;
+        \end{lstlisting}
+                
+                For example, in Listing~\ref{lst:polyhedral_example}, we have for
+                S1 and S2 the iteration domain :
+                \begin{itemize}
+                    \item[]$ \mathcal{D}_{S1}(N) = \left\{() \to \begin{bmatrix}i\end{bmatrix} \in \mathbb{Z} \middle|
+                    \left[\begin{array}{c:c:c}
+                            1 & 0 & 0 \\
+                            -1 & 2 & -2
+                    \end{array}\right]
+                    \left(\begin{array}{c}
+                            i \\ \hdashline
+                            N \\ \hdashline
+                            1 
+                    \end{array}\right)
+                    \geq \vec{0}
+                    \right\} $,
+                
+                    \item[]$ \mathcal{D}_{S2}(N) = \left\{() \to \begin{bmatrix}i\end{bmatrix} \in \mathbb{Z} \middle|
+                    \left[\begin{array}{c:c:c:c}
+                            1 & 0 & 0 & 0\\
+                            -1 & 0 & 1 & -1\\
+                            0 & 1 & 0 & 0\\
+                            0 & -1 & 1 & -1
+                    \end{array}\right]
+                    \left(\begin{array}{c}
+                            i \\
+                            j \\ \hdashline
+                            N \\ \hdashline
+                            1 
+                    \end{array}\right)
+                    \geq \vec{0}
+                    \right\} $.
+                \end{itemize}
+
+                In the case of \textit{if-then-else} enclosed statements, the iteration domain
+                for the statement will be an union of disjoint polytope, each representing a part
+                of the \textit{if-then-else} condition.
+
+            \subsubsection{Scattering Relations}
+                Defining the domain of iteration is great, but it doesn't give us any information
+                on the order in which will be executed each statement instance.
+
+                There is different type of ordering relations :
+                \begin{description}
+                    \item[Scheduling] is about ordering the statement instances in time by
+                        giving them a logical date vector indicating when each will be executed.
+                        The data vector is generally read in \textit{lexicographically} order, for example
+                        $(1,2,3)$ is executed before $(1,2,4)$ but after $(1,1,4)$.
+                    \item[Allocation] or \textbf{placement} is about ordering statement instances
+                        in space by assigning to each statement instances a logical stamp
+                        indicating the processor number in which it will be executed.
+                        Statement instances not sharing the same logical stamp can be
+                        executed in parallel in different processor.
+                \end{description}
+
+                It is possible to express each ordering relations as separate relation,
+                but it is also possible to aggregating them together : the result would be
+                a relation between the iterators set and a set of ordering vector which
+                would have some dimensions allocated to time ordering (scheduling) and
+                some other to space ordering (allocation).
+
+                For a statement $S$, the scattering relation can be written as follow :
+                \begin{center}
+                    $\theta_S(\vec{p}) = \left\{\vec{\imath_S} \to \vec{t_S} \in \mathbb{Z}^{\dim(\vec{\imath_S})}\times\mathbb{Z}^{\dim(\vec{t_S})}
+                    \middle|
+                    \left[T_S\right]\begin{pmatrix}\vec{t_S}\\ \vec{\imath} \\ \vec{p} \\ 1\end{pmatrix}
+                    \geq \vec{0}
+                    \right\}$,
+                \end{center}
+                where $\vec{\imath}$ is the $\dim(\vec{\imath})$-dimensional iteration vector
+                and $T_S \in \mathbb{Z}^{m_{\theta_S}\times(\dim(\vec{\imath_S})+\dim(\vec{t_S})+\dim(\vec{p})+1)}$
+                is an integer matrix where $m_{\theta_S}$ is the number of constraints.
+
+                For example, for Listing~\ref{lst:polyhedral_example}, we have for S1 and S2
+                statement the original scattering of the program :
+                \begin{itemize}
+                    \item[]
+                        $\theta_{S1}(N) = \left\{(i) \to \begin{pmatrix}t^{1}_{S1}\\t^{2}_{S1}\\t^{3}_{S1}\end{pmatrix} \in
+                            \mathbb{Z}\times\mathbb{Z}^{3}
+                            \middle|
+                            \left[\begin{array}{ccc:c:c:c}
+                                    -1 & 0 & 0 & 0 & 0 & 0 \\
+                                    0 & -1 & 0 & 1 & 0 & 0 \\ 
+                                    0 & 0 & -1 & 0 & 0 & 0
+                            \end{array}\right]
+                            \left(\begin{array}{c}
+                                t^{1}_{S1} \\
+                                t^{2}_{S1} \\
+                                t^{3}_{S1} \\ \hdashline
+                                i \\ \hdashline
+                                N \\ \hdashline
+                                1
+                            \end{array}\right)
+                            = \vec{0}
+                            \right\}$,\\
+                            which can be simplify to $\theta_{S1}(N)(i)=\begin{pmatrix}0\\i\\0\end{pmatrix}$.
+                    \item[]
+                        $\theta_{S2}(N) = \left\{(i) \to \begin{pmatrix}t^{1}_{S2}\\t^{2}_{S2}\\t^{3}_{S2}\\t^{4}_{S2}\\t^{5}_{S2}\end{pmatrix} \in
+                            \mathbb{Z}\times\mathbb{Z}^{3}
+                            \middle|
+                            \left[\begin{array}{ccccc:cc:c:c}
+                                    -1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1\\
+                                    0 & -1 & 0 & 0 & 0 & 1 & 0 & 0 & 0\\ 
+                                    0 & 0 & -1 & 0 & 0 & 0 & 0 & 0 & 0\\
+                                    0 & 0 & 0 & -1 & 0 & 0 & 1 & 0 & 0\\ 
+                                    0 & 0 & 0 & 0 & -1 & 0 & 0 & 0 & 0
+                            \end{array}\right]
+                            \left(\begin{array}{c}
+                                t^{1}_{S2} \\
+                                t^{2}_{S2} \\
+                                t^{3}_{S2} \\
+                                t^{4}_{S2} \\
+                                t^{5}_{S2} \\ \hdashline
+                                i \\ \hdashline
+                                N \\ \hdashline
+                                1
+                            \end{array}\right)
+                            = \vec{0}
+                            \right\}$,\\
+                            which can be simplify to $\theta_{S2}(N)\begin{pmatrix}i\\j\end{pmatrix}=\begin{pmatrix}0\\i\\0\\j\\0\end{pmatrix}$.
+                \end{itemize}
+                The first dimension for S1 is 0 and for S2 is 1 : it is to ensure that S2
+                is always executed after S1.
+                In our example, it doesn't matter because S1 and S2 doesn't have any dependence
+                whatsoever, and they could be run in parallel without problem, but for the sake
+                of the example, we've imposed that S1 is executed before S2.
+
+            \subsubsection{Access Relations}
+                The \textit{Access Relations} models the memory access of the different
+                array references in a statement. It map the statement instances to memory locations
+                for every array reference in the statement. Non-array reference can be seen as
+                0-dimensional array.
+
+                The access relation can be written in the general form :
+                \begin{center}
+                    $\mathcal{A}_{S,r}(\vec{p}) = 
+                    \left\{
+                        \vec{\imath_S} \to \vec{a}_{S,r} \in \mathbb{Z}^{\dim(\vec{\imath_S})}\times\mathbb{Z}^{\dim(\vec{a}_{S,r})}
+                        \middle|
+                        \left[A_{S,r}\right]\left(\begin{array}{c}\vec{a}_{S,r}\\\vec{\imath_S}\\\vec{p}\\1\end{array}\right)
+                        \geq \vec{0}
+                    \right\}$
+                \end{center}
+                where 
+                \begin{itemize}
+                    \item $r$ is the number of the reference in the statement (every references are
+                        numbered, from left to right generally),
+                    \item $\vec{\imath}$ is the $\dim(\vec{\imath})$-dimensional iteration vector
+                    \item $T_S \in \mathbb{Z}^{m_{\theta_S}\times(\dim(\vec{\imath_S})+\dim(\vec{t_S})+\dim(\vec{p})+1)}$
+                        is an integer matrix where $m_{\theta_S}$ is the number of constraints.
+                \end{itemize}
+
+                The read or write nature of the memory access is not expressed in this form,
+                and need to be given (for example, to compute dependences).
+
+            \subsubsection{OpenScop Framework}
+                OpenScop~\cite{openscop} is an open specification that define a file format
+                and a set of data structures to represent a static control part (SCoP).
+
+                OpenScop format is intended to be a stable bridge between polyhedral tools
+                and optimizers allowing interchangeable tools and flexible toolchains.
+
+                A library named \textit{osl} is provided to read/write OpenScop files
+                and manipulate the different data structures the specification define.
+                The file format as well as the library has been designed to accept extensions.
+
+                Substrate, the tool performing our optimization pass uses OpenScop as input and output
+                format.
+    \subsection{Data reuse}
+        \subsubsection{Difference between Reuse and Locality}
+            It's important to differentiate \textit{reuse} from \textit{locality}.
+            We say that there is \textit{reuse} for a data when this data is
+            access multiple time during the execution of a loop nest, during
+            the same iteration or not. It can be from different references or different statements.
+            
+            When there is reuse, it's possible (but not guaranteed) to have
+            \textit{locality}. We say that there is \textit{locality} when the
+            reused data remains in memory hierarchy level targeted 
+            (eg : the CPU cache in our case) between 2 reuses.
+            For that to be the case, the amount of other data accessed between the
+            2 reuses must not exceed the cache size, or else the reused data will be
+            evicted from the cache, causing a cache miss and forcing the cache
+            to fetch the data from the RAM (and RAM have higher latency compared to CPU cache).
+
+
+            Thus, we can say that the \textit{reuse} is linked to the way indexing
+            functions (for array references) are written, whereas \textit{locality} is
+            inherent to the iterations order/the way the loops are written.
+
+        \subsubsection{Types of Reuse}
+            
+%\begin{lstlisting}[frame=single, language=C, caption=Reuse example, label={lst:reuse_example}]
+%for(i=0; i<N ; i++)
+%    for(j=0; j<N ; j++)
+%    {
+%        A[i][j] = B[i] + B[i+1];
+%        C[i][j] = B[i+2] * 2;
+%    }
+%\end{lstlisting}
+
+            \paragraph{Self-Temporal}
+                Self-Temporal reuse occurs when the same reference access the same
+                data location.
+                
+%                For example, in Listing \ref{lst:reuse_example}, the reference \verb'B[i]' carry Self-Temporal
+%                reuse :\verb'B[0]',\verb'B[1]',\verb'B[2]' ... \verb'B[N-1]' are accessed
+%                \textit{j} times by the same reference \verb'B[i]'.
+%                And for the same reason, \verb'B[i+1]' and \verb'B[i+2]' also carry Self-Temporal reuse.
+
+            \paragraph{Self-Spatial}
+                Self-Spatial reuse occurs when the same reference access the same
+                line in an array (when in row-major). Especially, the space between
+                two accessed data location should not be greater than a cache line size,
+                or else there won't be any spatial locality.
+
+%                For example, in Listing \ref{lst:reuse_example}, the reference \verb'A[i][j]' carry
+%                Self-Spatial reuse.
+
+                Self-Temporal reuse can be considered as a special case of
+                Self-Spatial reuse : accessing the same data location mean that
+                the same array line is also accessed.
+            \paragraph{Group-Temporal}
+                Group-Temporal reuse occurs when different references access the same
+                data location. It can occur inside a same statement or across different
+                statements.
+
+%                For example, in Listing \ref{lst:reuse_example}, the reference
+%                \verb'B[i]', \verb'B[i+1]' and \verb'B[i+2]' carry Group-Temporal :
+%                the data accessed by \verb'B[i+2]' when $i=M$ will be access by
+%                \verb'B[i+1]' when $i=M+1$ and by \verb'B[i]' when $i=M+2$.
+
+            \paragraph{Group-Spatial}
+                Group-Spatial reuse occurs when different references access the same
+                line in an array (when in row-major). Again, the space between
+                two accessed data location should not be greater than a cache line size,
+                or else there won't be any spatial locality.
+                
+%                For example, in Listing \ref{lst:reuse_example}, the reference
+%                \verb'B[i]', \verb'B[i+1]' and \verb'B[i+2]' carry Group-Spatial :
+%                they all access to different data location, but on the same line.\\
+%                \\
+
+                So as you can see, a single reference can carry multiple type of reuse.
+                A statement being generally composed of multiple references, it 
+                can be hard to automatically favor some statements instead of others.
+    \subsection{How to profile data reuse}
+        \subsubsection{Reuse Vector Space}
+            The notion of Reuse Vector Space come from Wolf et. al.\cite{Wolf'91} and describe
+            the vector subspace of the Iteration vector space where the reuse of
+            a reference can be taken advantage to induce locality.
+            There is as many reuse vector space as there is type of reuse.
+
+            Wolf et. al. use the concept of uniformly generated references proposed
+            by Gannon et. al.\cite{Gannon:1988:SCL:50454.50460} for estimating reference
+            windows :
+            \begin{defn}
+            \label{sec:uniformly_generated}
+                Let $n$ be the depth of a loop nest, and $d$ be the dimensionality of
+                an array $A$. Two references $A[\vec{f}(\vec{\imath})]$ and
+                $A[\vec{g}(\vec{\imath})]$, where $\vec{f}$ and $\vec{g}$ are indexing
+                functions $Z^{n} \rightarrow Z^{n}$, are called \textbf{uniformly generated} if :
+                \begin{center}
+                    $\vec{f}(\vec{\imath}) = H\vec{\imath}+\vec{c}_f$ and $\vec{g}(\vec{\imath}) = H\vec{\imath}+\vec{c}_g$
+                \end{center}
+                where $H$ is a linear transformation and $\vec{c}_f$ and $\vec{c}_g$ are constant vectors.
+            \end{defn}
+            
+            We can partition references into equivalence class, called \textit{uniformly generated sets},
+            when the references operate on the same array, and have the same $H$.
+            You can see $H$ as a part of one of the access function (in the Polyhedral Model representation) of this statement :
+            it's the access function matrix without the part handling the constant vector.
+
+            The problem with that method, is that it would put the for example the references
+            $C[i][j],C[i][j+1],C[i-1][j]$ in the same class : they all share the
+            same $H$, but they don't have the same reuse space at all.
+            For example : $C[i][j],C[i-1][j]$ exhibit group-spatial reuse in the $i$ dimension,
+            whereas $C[i][j],C[i][j+1]$ exhibit group-spatial reuse in the $j$ dimension. So they
+            should not be group together in the same class.
+            \medskip
+
+            So the definition of the \textit{uniformly generated set} is not restrictive enough,
+            and in our case, we propose an addition to it : for two references $A$ and
+            $B$ (as expressed in Definition~\ref{sec:uniformly_generated}) to be in the same class :
+            \begin{itemize}
+                \item They need to have the same $H$.
+                \item with $\vec{c}=\vec{c_g} - \vec{c_f}$, $\vec{c}$ need to have $0$
+                    for all the elements of the vector \textbf{except one}.
+            \end{itemize}
+
+            The reuse spaces would then be computed for each type of reuse
+            with the methods described in~\cite{Wolf'91} : statements where
+            array references share the same reuse space should be aggregated (if
+            it doesn't violate any data dependence).
+
+        \subsubsection{The Simple Algorithm}
+            The \textit{Simple Algorithm}~\cite{Kennedy94maximizingloop} is a
+            optimization algorithm that improve data locality via Loop Fusion.
+            The idea is to fusion vertices of a directed graph when these vertices
+            are connected by non-fusion-preventing arcs.
+            In this graph, the vertices represent the different loop nests of a program part,
+            and the arcs represent data dependences between statements of different loop nests.
+
+            If the dependence is fusion-preventing~\cite{Bacon:1994:CTH:197405.197406} or if the loop headers are incompatible,
+            the arc representing the dependence will be marked fusion-preventing.
+
+            The algorithm is a modification of the greedy algorithm that partition
+            the nodes of the graph without sequentializing a parallel node/loop.
+            This algorithm doesn't give us any metric or way to evaluate a statement
+            reuse, so it doesn't help use for the reuse evaluation side, but the idea
+            of a dependence graph based greedy algorithm is interesting : with statement
+            instead of loop nest being the nodes, this kind of greedy algorithm 
+            could fusion statements that are inside different loop nest in the SCoP.
+            It means we would also need to redefine the \textbf{Safety} and \textbf{Profitability}
+            notions of the algorithm.
+
+        \subsubsection{Data and Loop Transformations}
+            An algorithm that transforms a loop nest to improve cache locality
+            by a combination of loop and data transformations is presented in~\cite{Kandemir99improvingcache}.
+
+            There's not much to say about it. The goal of the algorithm is to
+            compute a transformation matrix and array layout (and the explanation is a little
+            vague), so it isn't applicable in our case and it doesn't give us any metric or way to evaluate the reuse.
+        
+        \subsubsection{LoopCost Algorithms}
+            The LoopCost algorithm~\cite{McKinley:1996:IDL:233561.233564} provide
+            us with a cost model that allow to guide some loop transformation like
+            loop permutation, loop reversal, loop fusion, loop distribution,
+            by comparing the cost with and without the transformation.
+            
+            The LoopCost algorithm work like this : 
+            Each loop $l$ in a loop nest is considered as a candidate for the innermost
+            position in the nest. For each loop $l$, LoopCost compute and sum the number
+            of cache line access by a group of references (the groups are formed
+            using the RefGroup algorithm) when $l$ is placed as the innermost loop.
+
+            As a result, you have a cost for each loop when they are considered as innermost.
+            This cost enable to possibility to compare with hard numbers
+            a loop nest before and after some loop transformations, which allow to discard
+            or apply the transformations if the new cost is worse or better than the
+            original cost.
+            \bigskip
+
+            Because the LoopCost is loop transformation oriented and because it doesn't
+            use the number of references in a reference group in the computation
+            of the cost, it is not really applicable at our situation.
+        \subsubsection{Automatic Polyhedral Parallelization and Locality Optimization Algorithm}
+            Let $S_i$ and $S_j$ two statement of a program with a data dependence $e$
+            from $S_i$ to $S_j$.\\
+            Let $\vec{s}$ and $\vec{t}$ the iterators of respectively $S_i$ and $S_j$.\\
+            Let $\theta_{S_i}$ and $\theta_{S_j}$ the scattering function of respectively $S_i$
+            and $S_j$.\\
+            Consider the following affine $\delta_e$ :
+            \begin{center}
+                $\delta_e\left(\vec{s},\vec{t}\right) = \theta_{S_j}\left(\vec{t}\right) - \theta_{S_i}\left(\vec{s}\right)$
+            \end{center}
+
+            According to the paper~\cite{Bondhugula:2008:PAP:1379022.1375595},
+            the affine form $\delta_e\left(\vec{s},\vec{t}\right)$ is very significant
+            because it gives us ``the number of hyperplanes the dependence $e$ traverses
+            along the hyperplane normal $\theta$. If $\theta$ is used as a space loop to generate tiles
+            for parallelization, this function is a factor in the communication
+            volume. On the other hand, if $\theta$ is used as a sequential loop, it
+            gives us a measure of the reuse distance.''
+
+            If there is a upper bound to $\delta_e\left(\vec{s},\vec{t}\right)$,
+            minimizing it (or even nullify it), would be the same as minimizing (or nullify)
+            the number of hyperplanes that would be communicated as a result of
+            the dependence at the tile boundaries.
+
+            The problem is that minimizing $\delta_e\left(\vec{s},\vec{t}\right)$
+            can be really difficult because it ends up in an objective non-linear
+            in loop variables and hyperplane coefficients.
+
+            We can avoid this problem if we use a bounding function $v(\vec{p}) = u.\vec{p} + w$ such that :
+            \begin{center}
+                $\delta_e\left(\vec{s},\vec{t}\right) \leq v(\vec{p})$
+            \end{center}
+            i.e.,
+            \begin{center}
+                $v(\vec{p}) - \delta_e\left(\vec{s},\vec{t}\right) \geq 0$
+            \end{center}
+
+            With this last inequality, we can apply the Farkas Lemma :
+            \begin{center}
+                $v(\vec{p}) - \delta_e\left(\vec{s},\vec{t}\right) \equiv \lambda_{e0}
+                + \sum\limits_{k=1}^{m_e}{\lambda_{ek}\mathcal{P}_{e}^k},\qquad \lambda_{ek} \geq 0$
+            \end{center}
+            where $P_e^k$ is a face of $P_e$.
+
+            From this new form, you can get a linear equality and inequality system,
+            which can then be handled by PIP software to find minimal solution to it.
+
+            This algorithm doesn't give us any metric or way to evaluate reuse, so
+            we can't use it.
+
+    \subsection{SuBStrAte : the Similar Behaving Statement Aggregator}
+        Substrate is the program that implements what we learned during the internship.
+        Given an input Openscop file, it :
+        \begin{itemize}
+            \item Analyze the properties of the different statement of the scops
+                contained in the file : data reuse, vectorization, parallelization, etc...
+                using the metrics found in the literature.
+            \item Optimize the scops by aggregating statements when legal and preferable.
+                To decide if it is preferable, we rate how much similarly two statements
+                behave, for example we rate their common data reuse. The result is a rating,
+                between 0 and 1. If this rating is greater than a specific threshold, we
+                aggregate the two statements.
+            \item Produce an output Openscop file containing the optimized scops.
+        \end{itemize}
+
+        For now, the analyze and optimization only care about data reuse. The data reuse
+        profile of each statement is constructed by :
+        \begin{itemize}
+            \item All references in a statement are grouped by the name/id.
+            \item All the reference of a same id are then grouped by Uniformly Generated Set
+                (when they share the same H matrix).
+                \item All the references in an Uniformly Generated Set are finally grouped
+                    by equivalence class.
+        \end{itemize}
+        We compute the data reuse rating between two statements by counting the number of
+        references that share the same name, H matrix and equivalence class between the
+        two statements. We divide this number by the total number of references in the two
+        statements. To be aggregated, two statements need to have a rating greater than a
+        specific threshold, given by the user (a default one is given but it has been chosen
+        a little randomly).
+
+        For now, the aggregating algorithm only try to aggregating successive statements,
+        starting from the first two and then iterate until the last ones.
+
+\section{Work left}
+    \subsection{Learning about other properties and their metrics}
+        We've started the work on SuBStrate by learning about and implementing profiling of
+        data reuse. There's a lot more kind of properties that can be used to profile
+        and aggregate statements, like vectorization, parallelization, tiling hyperplane, etc...
+
+        The next in line is parallelization. We have to read papers about how we can profile
+        it in a statement, what metrics could be used for that, then trying to implement
+        it and find a way to rate it with a number between 0 and 1, test it, etc...
+    \subsection{Improve SuBStrAte aggregation and rating algorithms}
+        For now, the aggregation algorithm (successive statement only, from the first two,
+        to the last ones) is a little simple, and there could be other ways, better ways
+        to do it. We thought about maybe using a greedy algorithm to prioritize successive
+        statements that have the best rating, instead of start from the first two statements.
+        We also thought about maybe a greedy algorithm, but used in a graph, where nodes
+        are the statement, so that an aggregation can take place between statements that
+        are not successive (with the aggregation still being legal).
+
+
+\bibliographystyle{plain}
+\bibliography{biblio}
+\end{document}
