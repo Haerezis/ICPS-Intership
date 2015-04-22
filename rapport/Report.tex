@@ -129,7 +129,7 @@ Many computation-intensive programs spend a very large amount of their execution
 time inside nested loops. Thus, loop nest optimization is one of the major approach used
 for program optimisation.
 
-To represent the loop nest, you can use the Polyhedral Model, a powerful mathematical model
+To represent the loop nest, we can use the Polyhedral Model, a powerful mathematical model
 that allows to express loop nest as union of polytopes and loop optimizations as
 transformation of these polytopes.
 
@@ -193,7 +193,7 @@ The polyhedral model consist of three mathematical objects based on unions of re
 \end{itemize}
 
     \subsection{Iteration Domain}
-        To understand Iteration Domain, you must first understand what a \textit{statement instance}
+        To understand Iteration Domain, it's necessary to first understand what a \textit{statement instance}
         is. A statement instance is one particular execution of a statement.
         When a statement is located inside a loop nest, it can be associated to the value
         of the outer-loop counters (called \textit{iterators}.
@@ -691,7 +691,7 @@ for(i=0; i<N ; i++)
                 they all access to different data location, but on the same line.\\
                 \\
 
-                So as you can see, a single reference can carry multiple type of reuse.
+                So as we can see, a single reference can carry multiple type of reuse.
                 A statement being generally composed of multiple references, it 
                 can be hard to automatically favor some statements instead of others.
         \subsubsection{Reuse Vector Space}
@@ -730,7 +730,7 @@ for(i=0; i<N ; i++)
             
             We can partition references into equivalence class, called \textit{uniformly generated sets},
             when the references operate on the same array, and have the same $H$.
-            You can see $H$ as a part of one of the access function (in the Polyhedral Model representation) of this statement :
+            We can see $H$ as a part of one of the access function (in the Polyhedral Model representation) of this statement :
             it's the access function matrix without the part handling the constant vector.
 
             For example in Listing \ref{lst:reuse_example}, $B[i]$,$B[i+1]$ and $B[i+2]$ can be each written as
@@ -775,7 +775,7 @@ for(i=0; i<N ; i++)
                 \end{bmatrix}
                 $.
             \end{center}
-            As you can see, all these reference share the same $H=\begin{bmatrix}1 & 0\end{bmatrix}$,
+            As we can see, all these reference share the same $H=\begin{bmatrix}1 & 0\end{bmatrix}$,
             so they all belong to the same class.\\
             Of course, $B[i]$,$B[i+1]$ and $B[i+2]$ belong to different statement, and in
             our pass, a uniformly generated set would be created for each statement.
@@ -871,7 +871,7 @@ for(i=0; i<N ; i++)
             of cache line access by a group of references (the groups are formed
             using the RefGroup algorithm) when $l$ is placed as the innermost loop.
 
-            As a result, you have a cost for each loop when they are considered as innermost.
+            As a result, we have a cost for each loop when they are considered as innermost.
             This cost enable to possibility to compare with hard numbers
             a loop nest before and after some loop transformations, which allow to discard
             or apply the transformations if the new cost is worse or better than the
@@ -936,17 +936,18 @@ for(i=0; i<N ; i++)
             \end{center}
             where $P_e^k$ is a face of $P_e$.
 
-            From this new form, you can get a linear equality and inequality system,
+            From this new form, we can get a linear equality and inequality system,
             which can then be handled by PIP software to find minimal solution to it.
 
             This algorithm doesn't give us any metric or way to evaluate reuse, but instead
             give us a way to find automatically legal transformations, so we can't use it.
 
-        \subsubsection{Ehrhart Polynomial Algorithm}
-            TODO
+%        \subsubsection{Ehrhart Polynomial Algorithm}
+%            TODO
             %TODO Ask Loechner
 
     \subsection{Parallelism}
+        \subsubsection{}
     \subsection{Vectorization}
     \subsection{Tiling Hyperplane}
     \subsection{Register Pressure}
