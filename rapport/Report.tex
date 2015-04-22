@@ -111,11 +111,10 @@ and their effective use requires developers to design parallel programs or to re
 legacy sequential applications. However, parallel programming is still complex and out
 of reach for non experts, at either designing, writing or debugging level.
 
-To address
-this issue, ICPS/CAMUS is developing source-to-source compiler techniques for automatic
-program optimization and parallelization. Using these technologies, developers can
-continue to write sequential programs while the mapping to parallel architecture is
-computed automatically.
+To address this issue, ICPS/CAMUS is developing source-to-source compiler techniques
+for automatic program optimization and parallelization. Using these technologies,
+developers can continue to write sequential programs while the mapping to parallel
+architecture is computed automatically.
 
 The team has 7 faculty members and a dozen of PhD students,
 postdocs or engineers. Its members are deeply involved in European and international
@@ -149,11 +148,19 @@ decisions
 We would like to address these issues by proposing a new technique : before any
 high-level optimizations are used on the source code, a first pass is applied (our pass),
 aggregating "near behaving" statements together using their profile.
-"Near behaving" statements describe statements that have similar properties,
-like data reuse/locality, parallelism, vectorization etc. that constitute their profile.
 By doing that, we hope to ease the work of the high-level optimizer by "reducing" the size
 of large and complex code, and prevent it from separating statements that should
 not be separated (for example if they have a lot of data reuse in common).
+
+"Near behaving" statements describe statements that have similar properties,
+like data reuse/locality, parallelism, vectorization etc. that constitute their profile.
+
+To achieve that, we first need to learn about the different properties. Then in a second
+time, we need to found a way to measure/quantify them statement-wise. Then, in a third
+time we need to find a way to compute, to \textit{rate}, the similarity of the different
+properties between two statement. Then in the end, we will try to find smart algorithms
+that produce the best aggregated set of statement, based on the rate computed.
+
 
 \section{General Informations}
 %\section*{General Informations}
@@ -179,9 +186,9 @@ The polyhedral model consist of three mathematical objects based on unions of re
         by a specific statement, using affine constraints. It's these affine constraints 
         that can be seen as a $\mathbb{Z}$-polytope.
     \item The \textit{Scattering Relations} (or \textit{Scheduling Relations},
-        or even\textit{Mapping Relations}), that give us the ordering which
+        or even \textit{Mapping Relations}), that give us the ordering in which
         all the statement instances will be executed.
-    \item The \textit{Access Relations} that model read/write accesses made by
+    \item The \textit{Access Relations} that models read/write accesses made by
         the different arrays and simple variables.
 \end{itemize}
 
@@ -195,7 +202,7 @@ The polyhedral model consist of three mathematical objects based on unions of re
 
         Because the outer loop bound can be affine or parameterized, it is generally impossible to
         know their actual value at compilation time. Even if we knew the value of the
-        bounds, the number of iterators could be to enormous to count them all into sets.
+        bounds, the number of iterators could be too enormous to count them all into sets.
         That's why the sets are expressed as a system of affine constraints.
         These affine constraints define a $\mathbb{Z}$-polyhedron, hence the name of the model.
         The relation used to represent the Iteration Domain is :
@@ -206,7 +213,7 @@ The polyhedral model consist of three mathematical objects based on unions of re
             \geq \vec{0}
             \right\}$
         \end{center}
-        where $\vec{\imath}$ is the $\dim(\vec{imath})$-dimensional iteration vector and
+        where $\vec{\imath}$ is the $\dim(\vec{\imath})$-dimensional iteration vector and
         $D_S \in \mathbb{Z}^{m_{\mathcal{D}_S} \times (\dim(\vec{\imath})+\dim(\vec{p})+1)}$
         is an integer matrix where $m_{\mathcal{D}_S}$ is the number of constraints.
         \\
@@ -337,11 +344,11 @@ S2:             B[i][j] += 42;
                     \end{array}\right)
                     = \vec{0}
                     \right\}$,\\
-                    which can be simplify to $\theta_{S2}(N)\begin{pmatrix}i\\j\end{pmatrix}=\begin{pmatrix}0\\i\\0\\j\\0\end{pmatrix}$.
+                    which can be simplify to $\theta_{S2}(N)\begin{pmatrix}i\\j\end{pmatrix}=\begin{pmatrix}1\\i\\0\\j\\0\end{pmatrix}$.
         \end{itemize}
         The first dimension for S1 is 0 and for S2 is 1 : it is to ensure that S2
         is always executed after S1.
-        In our example, it doesn't matter because S1 and S2 doesn't have any dependence
+        In our example, it doesn't matter because S1 and S2 doesn't have any data dependence
         whatsoever, and they could be run in parallel without problem, but for the sake
         of the example, we've imposed that S1 is executed before S2.
 
@@ -371,7 +378,9 @@ S2:             B[i][j] += 42;
         \end{itemize}
 
         The read or write nature of the memory access is not expressed in this form,
-        and need to be given (for example, to compute dependences).
+        and need to be given (for example, to compute data dependences).
+
+        %TODO Expliquer les outputs dimensions (si il y en as dans le modèle théorique).
 
         For example, for Listing~\ref{lst:polyhedral_example}, we have for S1 and S2 the
         access relation :
@@ -405,10 +414,185 @@ S2:             B[i][j] += 42;
         Because S1 and S2 only have one reference, there's only one access relation for
         each of them.
 
-%    \subsubsection{Data Dependences}
-%            We can say that if there is no dependences between two statements, there
-%            is no reuse possible between them.
-%            %TODO
+    \subsubsection{Dependence Relations}
+        Data Dependences are necessary when, for example, we have to identify if a statement
+        can be parallelized or vectorized (simdized). They are also needed when we try to
+        transform the scattering of a statement : doing that could violate some dependences,
+        and the Dependence Relations (with Violation Relations) can be used to detect such
+        violations.
+
+        Fortunately, Data Dependence can be easily represented in the Polyhedral Model as
+        \textbf{Dependence Relation}.
+
+        A Dependence Relation represent the fact that some ordered statement iterations
+        access the same memory location. The general form of the Dependence Relation of
+        a dependence between a \textit{source} statement $S$ and a \textit{target}
+        statement $T$ at a depth $d$ is the following (explained after) :
+
+        \begin{center}
+        \scalebox{0.85}{
+            ${
+            \delta_{S,r_S \xrightarrow{d} T,r_T}(\vec{p}) =
+                \left\{
+                \begin{pmatrix}\vec{\imath}_S \\ \vec{a}_{S,r_S} \end{pmatrix}
+                \to
+                \begin{pmatrix}\vec{\imath}_T \\ \vec{a}_{T,r_T} \end{pmatrix}
+            \middle|
+                \left[\begin{array}{c:c|c:c|c:c}
+                    D^{\vec{\imath}_S}_{S} & 0 & 0 & 0 & D^{\vec{p}_S}_{S} & D^{c}_{S} \\ \hdashline
+                    0 & 0 & D^{\vec{\imath}_T}_{T} & 0 & D^{\vec{p}_T}_{T} & D^{c}_{T} \\ \hline
+                    A^{\vec{\imath}_S}_{S,r_S} & A^{\vec{a}_{S,r_S}}_{S,r_S} & 0 & 0 & D^{\vec{p}}_{S,r_S} & D^{c}_{S,r_S} \\ \hdashline
+                    0 & 0 & A^{\vec{\imath}_T}_{T,r_T} & A^{\vec{a}_{T,r_T}}_{T,r_T} & D^{\vec{p}}_{T,r_T} & D^{c}_{T,r_T} \\ \hdashline
+                    0 & I & 0 & -I & 0 & 0 \\ \hline
+                    I^{1..d-1,\bullet} & 0 & -I^{1..d-1,\bullet} & 0 & 0 & 0 \\ \hdashline
+                        I^{d,\bullet} & 0 & -I^{d,\bullet} & 0 & 0 & 0\text{ or }-1 \\
+                \end{array}\right]
+                %\quad
+                \begin{pmatrix}{c}
+                    \vec{\imath}_S \\ \hdashline
+                    \vec{a}_{S,r_S} \\ \hline
+                    \vec{\imath}_T \\ \hdashline
+                    \vec{a}_{T,r_T} \\ \hline
+                    \vec{p} \\ \hdashline
+                    1 \\
+                \end{pmatrix}
+                \quad
+                \begin{matrix}
+                    \geq \\ \hdashline
+                    \geq \\ \hline
+                    \geq \\ \hdashline
+                    \geq \\ \hdashline
+                    = \\ \hline
+                    = \\ \hdashline
+                    \geq \\
+                \end{matrix}
+                \vec{0}
+                \right\}
+            }$
+        }
+        \end{center}
+        If, for the statement $S$ and $T$ and with the depth $d$, this relation is not empty
+        then there is a dependence between $S$ and $T$.
+        
+        This matrix seems complicated but we are just piling up more and more constraints
+        on a linear system. Theses constraints correspond to three sub-relations :
+        \begin{itemize}
+            \item First, there is the \textbf{Existence Condition} of the instances.
+                It corresponds to the line 1-2 of the matrix.
+
+                The \textit{Existence Conition} determine, like in the \textit{Domain Relation},
+                the set of possible iterations for the 2 statements (a dependence couldn't
+                possibly exist between out-of-\textit{Domain} iterations).
+
+                It's just the \textit{Domain Matrix} of the 2 statements split vertically
+                in 3 and placed correctly in the \textit{Dependence Matrix}.
+            \item Second, there is the \textbf{Conflit Condition} of the memory location.
+                It corresponds to the line 3-4-5 of the matrix.
+
+                The \textit{Conflict Condition} determines the equality of the 2 different 
+                memory accesses causing the dependence : if there is a dependence,
+                it means that for some iterations, there is 2 memory accesses that 
+                access the same memory location, meaning that for some iterations,
+                the 2 memory accesses are equal.
+
+                So we add to the system the \textit{Access Matrix} of the memory accesses of the 2
+                statements causing the dependence and then a series a constraints
+                that bind the two access into equality (Identity matrix for the first
+                \textit{Access Matrix} , and a negative Identity matrix for the second).
+            \item Third, there is the \textbf{Causality Condition} of the instances.
+                It corresponds to the line 6-7 of the matrix.
+
+                The \textit{Causality Condition} make sure that the iterations of the
+                \textit{source} statement are executed before the ones of the \textit{target} statements
+                involved in the dependence.
+
+                We define what is called the \textit{dependence depth} $d$. There is
+                as many possible $d$ as there is of common loops between the 2 statements.
+                If for a value of $d$, the linear system represented by the \textit{Dependence Matrix}
+                has a solution, it means that for the loop of depth $d$ carry the dependence.
+                If multiple value of $d$ produce solution to the linear system (so there
+                is multiple \textit{Dependence Relation} for the same statements and
+                memory location/accesses), it means that multiple loops carry the dependence.
+
+                To add the notion of \textit{Causality} we add to the system a series of
+                constraint binding the corresponding \textit{source} and \textit{target}
+                iterators of the loops having a depth lesser than $d$
+                (with a Identity and negative Identity).
+                For the \textit{source} and \textit{target} iterator of the loop having
+                the depth $d$, instead of an equality, we bind them with inequality :
+                the \textit{source} iterator lesser or equal ($\leq$) to the \textit{target} iterator.
+
+                It's also possible to force a strict inequality ($<$) by setting the cell
+                in the last line and column of the matrix to $-1$, instead of $0$.
+        \end{itemize}
+
+        \medskip
+        
+        To illustrate the \textit{Dependence Matrix}, we would like to introduce a piece of code :
+\begin{lstlisting}[frame=single, language=C, caption={Simple code for Dependence Relation example}, label={lst:dependence_example}]
+for(i=1 ; i<N ; i++)
+{
+        A[i] = 42;
+        B[i] = A[i-1]
+}
+\end{lstlisting}
+        
+        For example, in the Listing~\ref{lst:dependence_example}, we can see a Read-after-Write
+        dependence : when $(i=1)$ we write in $A[1]$, and when $(i=2)$ (the next iteration)
+        we read in $A[1]$ (and write in $A[2]$ but the location is different so that's not important here).
+
+        For this dependence, we would have the following \textit{Dependence Matrix} :
+\begin{center}
+$
+        \begin{array}{c:c|c:c|c:c}
+        i &    [0] & i' &   [0]' &  N &  1 \\ \hline \hline
+        1 &    0 &   0 &    0 &   0 &  -1 \\
+        -1 &    0 &   0 &    0 &   1 &  -1 \\
+        0 &    0 &   0 &    0 &   1 &  -2 \\ \hdashline
+        0 &    0 &   1 &    0 &   0 &  -1 \\
+        0 &    0 &  -1 &    0 &   1 &  -1 \\
+        0 &    0 &   0 &    0 &   1 &  -2 \\
+        1 &   -1 &   0 &    0 &   0 &   0 \\ \hline
+        0 &    0 &  -1 &    1 &   0 &   1 \\ \hdashline
+        0 &   -1 &   0 &    1 &   0 &   0 \\ \hline
+        -1 &    0 &   1 &    0 &   0 &   0 \\
+        \end{array}
+        \qquad
+        \begin{matrix}
+                \\ \hline \hline
+        {i-1 >= 0} \\
+        {-i+N-1 >= 0} \\
+        {N-2 >= 0} \\ \hdashline
+        {i'-1 >= 0} \\
+        {-i'+N-1 >= 0} \\
+        {N-2 >= 0}  \\
+        {i-[0] == 0}\\ \hline
+        {-i'+[0]'+1 == 0} \\ \hdashline
+        {[0] - [0]' == 0}  \\ \hline
+        {-i+i' >= 0} \\
+        \end{matrix}
+$
+\end{center}
+    with :
+    \begin{itemize}
+        \item $[0]$ and $[0]'$ the first (and only) dimension of respectively \verb'A[i]' and
+            \verb'A[i-1]'.
+        \item $i$ and $i'$ the iterators of respectively \verb'A[i]' and \verb'A[i-1]'
+            (here $i$ and $i'$ are the same, but iterators are always considered different).
+        \item A dependence depth $d = 1$.
+    \end{itemize}
+    
+    If we pass this matrix in any linear solving software (like PIP~\cite{Fea88}) and try to solve it,
+    we would get solutions, meaning that the dependence exists.
+
+    \bigskip
+
+    That's really one of the most powerful side of the Polyhedral Model, its ability to
+    compute the different dependences by building linear systems : if there is solution,
+    there is dependence, and if not, there is not dependence. It's powerful because
+    the techniques to build and solve linear system are known and mastered, so the basis
+    of the model is really strong and stable. 
+
 
     \subsection{OpenScop Framework}
         OpenScop~\cite{openscop} is an open specification that define a file format
@@ -421,8 +605,8 @@ S2:             B[i][j] += 42;
         and manipulate the different data structures the specification define.
         The file format as well as the library has been designed to accept extensions.
 
-        Substrate, the tool performing our optimization pass uses OpenScop as input and output
-        format.
+        Substrate, the tool performing our analyze and optimization pass uses OpenScop
+        as input and output format.
 
 \section{Statement Profiling}
     \subsection{Data Reuse/Locality}
@@ -430,6 +614,7 @@ S2:             B[i][j] += 42;
         then talk about the different metrics and methods found in the literature used to evaluate
         and quantifying data reuse and why they where selected or not for the statements profile.
 
+        %TODO
         %Le problème étant que dans notre cas, seul la quantification de reuse nous intéresse
         %la locality étant lié au scattering, il nous intéresse moins.
 
@@ -476,7 +661,7 @@ for(i=0; i<N ; i++)
             \paragraph{Self-Spatial}
                 Self-Spatial reuse occurs when the same reference access the same
                 line in an array (when in row-major). Especially, the space between
-                two accessed data location should not be greater than a cache line size,
+                two accessed data locations should not be greater than a cache line size,
                 or else there won't be any spatial locality.
 
                 For example, in Listing \ref{lst:reuse_example}, the reference \verb'A[i][j]' carry
