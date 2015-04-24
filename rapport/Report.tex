@@ -415,6 +415,7 @@ S2:             B[i][j] += 42;
         each of them.
 
     \subsubsection{Dependence Relations}
+    \label{sec:dependence_relations}
         Data Dependences are necessary when, for example, we have to identify if a statement
         can be parallelized or vectorized (simdized). They are also needed when we try to
         transform the scattering of a statement : doing that could violate some dependences,
@@ -614,7 +615,7 @@ $
         then talk about the different metrics and methods found in the literature used to evaluate
         and quantifying data reuse and why they where selected or not for the statements profile.
 
-        %TODO
+        %XXX
         %Le problème étant que dans notre cas, seul la quantification de reuse nous intéresse
         %la locality étant lié au scattering, il nous intéresse moins.
 
@@ -936,8 +937,9 @@ for(i=0; i<N ; i++)
             \end{center}
             where $P_e^k$ is a face of $P_e$.
 
-            From this new form, we can get a linear equality and inequality system,
-            which can then be handled by PIP software to find minimal solution to it.
+            From this new form, we can get a linear system (formed by equalities and
+            inequalities), which can then be handled by PIP software to find
+            minimal solution to it.
 
             This algorithm doesn't give us any metric or way to evaluate reuse, but instead
             give us a way to find automatically legal transformations, so we can't use it.
@@ -947,8 +949,165 @@ for(i=0; i<N ; i++)
             %TODO Ask Loechner
 
     \subsection{Parallelism}
-        \subsubsection{}
+        %TODO dependence from itself to itself → replace with "self-dependence" and add glossary
+        We say that a statement can be parallelized for a certain loop when it is legal to
+        execute different \textit{instances} of the statement (so with different iterators)
+        on multiple cores at the same time, without violating any dependences. The
+        goal (not always possible) of executing multiple instances at the same tame is to
+        speed up the overall execution of the program.
+
+        Unlike \textit{Data Reuse} where we had to find a good way to detect and quantify it
+        because there could be more or less \textit{reuse} in a statement, the \textit{Parallelism}
+        of a statement doesn't need to be "quantify" : a statement can be either parallelized
+        for a certain loop or it cannot, no more no less.
+
+        So in the end, the \textit{Parallelism Profile} of a statement is just the list
+        of loop than can be parallelized safely. And to determine which loop can be parallelized
+        safely, we just need to analyze the dependences the statement can have from itself
+        to itself. Dependences in the Polyhedral Model are explained in the Section~\ref{sec:dependence_relations}.
+       
+        \bigskip
+
+        Because we analyze the dependences a statement have from itself to itself, the only
+        dependence we will find to analyze are Read-after-Write or Write-after-Read dependences :
+        \begin{itemize}
+            \item Read-after-Read dependences doesn't prevent parallelization because there is no
+                change made at the memory location in question, so we don't even look at them.
+        
+            \item Write-after-Write dependences doesn't concern us here because there is
+                only one \textit{write} to the memory per statement which means that
+                the \textit{source} and \textit{target} statement of Write-after-Write
+                dependences are always different, which is not out case here.
+        \end{itemize}
+        
+        So once we've computed all the dependence possible (for all the depth $d$ possible),
+        we need, for all the iterators/loops of the statement, to check if one of the dependences
+        is loop-carried :
+        \begin{itemize}
+            \item A statement can be parallelized for a certain loop if none of its dependence
+                (from itself to itself) is loop-carried.
+            \item In the contrary if any dependence of a statement is loop-carried for an certain loop,
+                the statement cannot be parallelized for this loop.
+        \end{itemize}
+        Moreover, if a statement doesn't have \textit{any} dependence, it means that the
+        statement can be parallelized for all its loops.
+
+        \bigskip
+
+        To determine if a \textit{Dependence Relation} is loop-carried or not for a certain
+        loop $l$, we just have to add to the linear system represented by the
+        \textit{Dependence Matrix} the following constraints :
+        \begin{itemize}
+            \item A equality constraint between each of the $(l-1)$ first iterators
+                of the \textit{source} and \textit{target} statements.
+            \item A \underline{strict} inequality between the $l^{\text{th}}$ iterator of
+                the \textit{source} and \textit{target} statements.
+        \end{itemize}
+        These additional constraints have the following meaning : if dependences
+        still exists between \textit{instances} of the \textit{source} and \textit{target}
+        statement in the $l^\text{th}$ iteration dimension
+        \begin{itemize}
+            \item even when all of their \textit{other} iterators are equal (the "equal" constraints),
+            \item even when the \textit{source instance} and \textit{target instance} of the dependences
+                in the $l^\text{th}$ must be strictly different (the "strict inequality" constraint),
+        \end{itemize}
+        then the dependence is loop-carried for the loop $l$.
+
+        Once the constraints have been added to the system, we just have to give it to a
+        solver like PIP : if there is a solution, the dependence is loop-carried for $l$,
+        else it is not.
+        
     \subsection{Vectorization}
+        \subsubsection{Principles}
+        Vectorization is a special case of Parallelization where we try unroll a little
+        the loop and transform scalar operations, that compute only one single pair of
+        operand, to vector operations (SIMD operation : Single Instruction, Multiple Data),
+        that compute multiple pair of operand at a time, so that the loop can run a little
+        faster and more efficiently.
+
+        One of the condition for a statement to be vectorized is that the memory accesses
+        that appear in it should have the same alignment in memory : the address of all the
+        accesses of modulo the vector register size should be the same for all the accesses
+        of the statement.
+        But techniques exist to transform non-aligned accesses to aligned accesses, like
+        in this paper~\cite{Eichenberger:2004:VSA:996893.996853}, so we chose to ignore this
+        condition, by considering that compilers are now capable of handling this problem.
+
+        Because Vectorization is a special case of Parallelization, the way to detect it
+        is a lot like the way to detect parallelization : it involve the analyze of
+        the dependences a statement has to itself. But unlike Parallelization, here we are
+        only interested in a certain number of loops. Those loops are the ones whose iterators
+        are used either in :
+        \begin{itemize}
+            \item the last output dimension of the accesses of the statements when in row-major,
+            \item the first output dimension of the accesses of the statements when in column-major.
+        \end{itemize}
+        These loops also need to have a unit stride (increment of 1).
+
+        We will call the loops validating these 2 conditions \textbf{candidate loops}.
+        The other loops, the ones that don't validate the 2 conditions, are ignored for
+        the rest of the analyze (even though they could have been parallel). This is
+        because when we vectorize a statement, the accesses of consecutive instances have
+        to access consecutive memory location which can only be the case when the iterator
+        of the loop is used in the last/first output dimension and when it have a unit stride.
+        To have a real unit stride, these loop also need to be the innermost loop of the loop nest
+        surrounding the statement.
+        
+        But we consider that it is not necessary for a loop to be the innermost to be
+        in the \textit{Vectorization Profile}, because to be in the profile
+        we only want to know which loop \textbf{could} allow vectorization
+        for the statement \textbf{if} this loop was the innermost. The loop may not be
+        the innermost at the moment, but the \textit{Vectorization Profile} would tell
+        us that if we find a way to make it the innermost, then we would unlock vectorization
+        for this statement and for this loop.
+
+        \bigskip
+
+        We then need to analyze the dependences of the statement from itself to itself :
+        \begin{itemize}
+            \item If there is no dependence at all, then we can add all the 
+                \textit{candidate loops} to the \textit{Vectorization Profile}.
+            \item If there is dependences, we only look at the dependences that
+                are carried by one or more of the \textit{candidate loops}.\\
+                For all the remaining dependences $D$ carried by the loop $l$,
+                if $D$ is a Write-after-Write or Read-after-Write dependence, then $l$
+                is removed from the \textit{candidate loops}.
+                The other kinds of dependence are Write-after-Read Read-after-Read 
+                which doesn't cause any problems for the vectorization, so we can ignore
+                those kinds of dependences.
+        \end{itemize}
+        The \textit{candidate loops} that are left are then added to the profile because they
+        don't cause any threats to the vectorization.
+
+        \bigskip
+
+        The \textit{Vectorization Profile} is in the end just the list of loops that
+        \textbf{if} they are/become the innermost loop, we can then vectorize the statement.
+
+        \subsubsection{Limitations}
+        For the \textit{Vectorization Profile}, we have chosen to only analyse the statements
+        as if they were the only statement of the loop nest : that's why we only talk
+        about dependences that are from and to the statement.
+
+        This approach simplify the problem, but add a limitation to the profile :
+        a statement could be vectorized if it is considered "alone" but can in fact not
+        be vectorized because it has some dependences with some other statements of the loop
+        nest.
+
+        For example, in the following code :
+\begin{lstlisting}[frame=single, language=C, caption={Vectorization Profile limitation example}, label={lst:vectorization_limitation}]
+for(i=1 ; i<N ; i++) {
+    A[i-1]=B[i]+1; // S1
+    C[i]=A[i]*2; // S2
+}
+\end{lstlisting}
+    S1 doesn't have any dependence from itself to itself, so the $i$ loop would be in its
+    profile. But there is a Write-after-Read dependence between S1 and S2 : this dependence
+    make the vectorization of S1 illegal.
+
+    So when using the \textit{Vectorization Profile} during an optimization, we need to keep
+    checking for inter-statement dependences when trying to vectorize statements.
+
     \subsection{Tiling Hyperplane}
     \subsection{Register Pressure}
 
@@ -962,7 +1121,7 @@ for(i=0; i<N ; i++)
     \subsection{Aggregation algorithms}
         \subsubsection{Simple Successive Statements Aggregation}
         \subsubsection{Successive Statements Aggregation with Greedy Algorithm}
-        \subsubsection{Statements Aggregagation using Graphes with Greedy Algorithm}
+        \subsubsection{Statements Aggregation using Graphs with Greedy Algorithm}
 
 \section{Experiments and Results}
 
