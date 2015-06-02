@@ -5,6 +5,7 @@ all:Report
 Report:Report.tex
 	$(CC) --jobname $@ $^
 	bibtex $@
+	makeglossaries $@
 	$(CC) --jobname $@ $^
 	$(CC) --jobname $@ $^
 	evince $@.pdf &

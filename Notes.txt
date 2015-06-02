@@ -2,7 +2,16 @@ Data locality :
     La localité spatial est préféré si la tailles des lignes/blocs de caches est grande.
     → Sinon c'est la localité temporelle qui est préférée.
 
-
-
 Bibliothèques :
 -Pour le calcul scientifique, utilisation de la GSL : GNU Scientific Library
+
+
+
+
+Max 60 page, mais la moyenne est 30/40. → Les annexes ne comptent pas dans le compte (si il y a des trucs pas
+"nécessaire", on peut les mettres en annexes).
+Mémoire :
+    -Bien préciser le travail fournie :  le pire étant que les évaluants ne savent pas qu'est
+    ce qui a été fait par moi, ou l'équipe, ou autre.
+    → Préciser que j'ai fait (surtout pour la lecture de papier et l'état de l'art).
+

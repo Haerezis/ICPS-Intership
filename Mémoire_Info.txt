@@ -1,0 +1,74 @@
+- Info obligatoire de la page de garde :
+    → Le titre du mémoire (pas juste "Mémoire", ou "Mon stage", mais le vrai titre/sujet).
+    → Mon nom et prénom, EN GRAND (parce que je suis important YO).
+    → Nom du maitre de stage.
+    → (Optionnelle) nom de la structure d'accueil.
+    → La date (l'année en cours) et la formation universitaire.
+- Sommaire obligatoire :
+    - Max 3 niveau de sous sections
+- (Optionnelle) Page de remerciement.
+- Introduction
+    Présenter très rapidement la structure, le sujet du stage (très court).
+    → soit on présente bcp l'entreprise (et on parle plus plus tard), soit on en parle
+    pas beaucoup et on le re-aborde plus tard de manière plus détaillé.
+    → Il faut présenter le plan, le détaillé un peu pour expliciter un peu en qques lignes
+    le contenu.
+- Présentation de la structure :
+    → Pas de photo de la boite (lol)
+    → Parler du secteur d'activité
+    → Taille de l'entreprise, nombre de personnes employé.
+    → Comment est structuré l'entreprise (les différents départements..)
+    → Ma position.
+- Mise en perspective des missions/objectifs (pourquoi on est là).
+    → "On avait besoin de faire tel ou tel chose, l'équipe bossait dans le domaine,
+        et du coup vous vous en occupé".
+    → Présentation du cachier des charges données au début.
+    → Expliquer son mode de travail (comment on fonctionne, avec qui on intéragie,
+    qui fait quoi (si on travaille en équipe), etc...).
+    → (Optionnelle) Donner un planning du travail effectué (possible de le confronter
+    avec ce qu'on avait prévu).
+- Les réalisations :
+    → Présenter la démarche et la méthode, expliquer l'approche (comment on a fait les choses).
+    → Présenter les choix effectués et expliquer comment et pourquoi. Si pour un choix,
+    son avis est différent de celle de la direction, expliquer "poliment" pourquoi vous
+    auriez fait différament (être diplomatique).
+    → Donner la quantification de travail ("j'ai passé 2 mois à l'état de l'art, 2mois de dev...).
+    Pas la peine d'être trop précis.
+    → Donner l'importance de certaine portion du travail (si je passe 3 semaine à debug un truc,
+    il faut le dire et montrer qu'on a un peu merdé, parce que c'était pas "important").
+    → (Entreprise) Expliquer comment le produit fini a été introduit aux client, sa finalité.
+    → (Possible) Décrire les difficultés, et expliquer comment on les a résolus.
+    → IMPORTANT IMPORTANT : Il faut prendre de la hauteur
+        → Sortir de la problématique propre et prendre de la hauteur, en expliquant ce que
+        j'ai appris et je sais faire APRES.
+    → Il ne faut pas être trop technique ni trop scientifique. "Lu par un informaticien, mais pas un spécialiste".
+    → La structure n'a pas besoin d'être chronologique.
+- Bilan des realisations :
+    → Comparer les objectifs/cahier des charges et la réalisation final.
+    → Être critique.
+    → Citer les difficultés important, sur ce qu'on a buté et comment on s'en est sorti.
+    → On peut être critique sur son propre travail.
+    → Parler des compétences acquises (en restant humble).
+
+- Conclusion (IL FAUT ARGUMENTER ABSOLUMENT DANS LA CONCLUSION):
+    → Valoriser son travail.
+    → Revenir sur les points fort de ce qu'on a apporté.
+    → Ce que ça vous à apporter à vous (ne pas être naïf, genre "ça m'a bcp plus" osef, contrairement à
+    "je suis devenu plus mure, car ...").
+    → Perspectif pour l'entreprise et pour moi.
+    → Rapide bilan personnel (attention à la naiveté) : parler possiblement d'un point qui
+    nous a passionné.
+
+- (Possiblement) Glossaire, après conclusion : ça n'empeche pas de mettre la definition dans
+    le texte.
+- Obligatoire, Les références (pas trop de wikipedia...).
+- Annexes.
+
+
+Forme :
+    → Plan OK, mais la présentation de l'entreprise va dans l'intro.
+    → Langage soutenu.
+    → Parler avec "nous" sauf cas particulier "je" (mais faut pas en abuser).
+    → Ne pas s'addresser au lecteur directement.
+    → Ne pas faire "un paragraphe, une ligne".
+    → Si on insère une figure, on doit la commenter.

@@ -165,9 +165,9 @@ not be separated (for example if they have a lot of data reuse in common).
                 by a specific statement, using affine constraints. It's these affine constraints 
                 that can be seen as a $\mathbb{Z}$-polytope.
             \item The \textit{Scattering Relations} (or \textit{Scheduling Relations},
-                or even\textit{Mapping Relations}), that give us the ordering which
+                or even \textit{Mapping Relations}), that give us the ordering in which
                 all the statement instances will be executed.
-            \item The \textit{Access Relations} that model read/write accesses made by
+            \item The \textit{Access Relations} that models read/write accesses made by
                 the different arrays and simple variables.
         \end{itemize}
 
@@ -181,7 +181,7 @@ not be separated (for example if they have a lot of data reuse in common).
 
                 Because the outer loop bound can be affine or parameterized, it is generally impossible to
                 know their actual value at compilation time. Even if we knew the value of the
-                bounds, the number of iterators could be to enormous to count them all into sets.
+                bounds, the number of iterators could be too enormous to count them all into sets.
                 That's why the sets are expressed as a system of affine constraints.
                 These affine constraints define a $\mathbb{Z}$-polyhedron, hence the name of the model.
                 The relation used to represent the Iteration Domain is :
@@ -192,7 +192,7 @@ not be separated (for example if they have a lot of data reuse in common).
                     \geq \vec{0}
                     \right\}$
                 \end{center}
-                where $\vec{\imath}$ is the $\dim(\vec{imath})$-dimensional iteration vector and
+                where $\vec{\imath}$ is the $\dim(\vec{\imath})$-dimensional iteration vector and
                 $D_S \in \mathbb{Z}^{m_{\mathcal{D}_S} \times (\dim(\vec{\imath})+\dim(\vec{p})+1)}$
                 is an integer matrix where $m_{\mathcal{D}_S}$ is the number of constraints.
                 \\
@@ -323,11 +323,11 @@ not be separated (for example if they have a lot of data reuse in common).
                             \end{array}\right)
                             = \vec{0}
                             \right\}$,\\
-                            which can be simplify to $\theta_{S2}(N)\begin{pmatrix}i\\j\end{pmatrix}=\begin{pmatrix}0\\i\\0\\j\\0\end{pmatrix}$.
+                            which can be simplify to $\theta_{S2}(N)\begin{pmatrix}i\\j\end{pmatrix}=\begin{pmatrix}1\\i\\0\\j\\0\end{pmatrix}$.
                 \end{itemize}
                 The first dimension for S1 is 0 and for S2 is 1 : it is to ensure that S2
                 is always executed after S1.
-                In our example, it doesn't matter because S1 and S2 doesn't have any dependence
+                In our example, it doesn't matter because S1 and S2 doesn't have any data dependence
                 whatsoever, and they could be run in parallel without problem, but for the sake
                 of the example, we've imposed that S1 is executed before S2.
 
@@ -357,7 +357,7 @@ not be separated (for example if they have a lot of data reuse in common).
                 \end{itemize}
 
                 The read or write nature of the memory access is not expressed in this form,
-                and need to be given (for example, to compute dependences).
+                and need to be given (for example, to compute data dependences).
 
             \subsubsection{OpenScop Framework}
                 OpenScop~\cite{openscop} is an open specification that define a file format
@@ -416,7 +416,7 @@ not be separated (for example if they have a lot of data reuse in common).
             \paragraph{Self-Spatial}
                 Self-Spatial reuse occurs when the same reference access the same
                 line in an array (when in row-major). Especially, the space between
-                two accessed data location should not be greater than a cache line size,
+                two accessed data locations should not be greater than a cache line size,
                 or else there won't be any spatial locality.
 
 %                For example, in Listing \ref{lst:reuse_example}, the reference \verb'A[i][j]' carry

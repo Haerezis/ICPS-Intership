@@ -43,6 +43,7 @@
 %%% Custom sectioning
 \usepackage{sectsty}
 \allsectionsfont{\normalfont\bfseries}
+\usepackage[nottoc,notlot,notlof]{tocbibind}
 
 
 %%% Custom headers/footers (fancyhdr package)
@@ -63,10 +64,13 @@
 \numberwithin{figure}{section}          % Figurenumbering: section.fig#
 \numberwithin{table}{section}               % Tablenumbering: section.tab#
 
+\setcounter{secnumdepth}{4} % default value for 'report' class is "2"
+
 
 %%% Maketitle metadata
 \newcommand{\horrule}[1]{\rule{\linewidth}{#1}}     % Horizontal rule
-%\DeclareMathOperator{\dim}{dim}
+\usepackage[toc]{glossaries}
+\include{Glossary}
 
 \title{
         %\vspace{-1in}  
@@ -77,17 +81,19 @@
         \horrule{2pt} \\[0.5cm]
 }
 \author{
-        \normalfont                                 \normalsize
+        \normalfont                                 \Large
         Thomas Kuntz \\                                \normalsize
         Master RISE \\                                \normalsize
         UFR d'Informatique \\                                \normalsize
         Supervisor : Cédric Bastoul\\
 }
 \date{}
-
+\makeglossaries
 
 %%% Begin document
 \begin{document}
+%TODO Fill glossary and add link to glossary for used word
+
 \maketitle
 \thispagestyle{empty}
 
@@ -160,6 +166,45 @@ time, we need to found a way to measure/quantify them statement-wise. Then, in a
 time we need to find a way to compute, to \textit{rate}, the similarity of the different
 properties between two statement. Then in the end, we will try to find smart algorithms
 that produce the best aggregated set of statement, based on the rate computed.
+
+%{The reasons behind the choice of this internship}
+\section{The reasons behind the choice of this internship}
+The first reason why I've asked and chosen this internship was that I wanted to try and learn
+if I was capable, if I had what it takes to work in research, or if it was more than I could
+chew.
+
+The second was that I also wanted to put myself to the test and see if I really 
+wanted to try to do a PhD or not : I wanted to know if I could be as interested in being
+a researcher as I was interested in being a college teacher in Computer Science
+(because it's hard in France to be the second without being the first one).
+
+In other words,
+I was expecting this internship to be a little bit like a trial by fire that would help me
+to take a decision for my professional future.
+
+\bigskip
+
+In addition to these reasons, that were more personal and intimate than practical, there is
+also the more practical reasons :
+\begin{itemize}
+    \item[] I wanted to learn more about optimization methods, both high and low level methods,
+        so I know more about what can be done when trying to optimize by hand a code.
+    \item[] I was expecting to learn some valuable skills :
+        \begin{itemize}
+            \item To be able to do the literature review about state of the art of
+                a subject (here : code optimization techniques).
+            \item To become more familiar with the reading, analyze and synthesis of
+                scientific papers.
+            \item To become more familiar with benchmarking, performance analyze and
+                graphical representation of data.
+            \item To become more familiar with the use of external libraries, project
+                management and become more fluent in C and Python.
+        \end{itemize}
+\end{itemize}
+
+\bigskip
+
+Those were all the reasons that motivated my choice.
 
 
 \section{General Informations}
@@ -414,7 +459,7 @@ S2:             B[i][j] += 42;
         Because S1 and S2 only have one reference, there's only one access relation for
         each of them.
 
-    \subsubsection{Dependence Relations}
+    \subsection{Dependence Relations}
     \label{sec:dependence_relations}
         Data Dependences are necessary when, for example, we have to identify if a statement
         can be parallelized or vectorized (simdized). They are also needed when we try to
@@ -610,6 +655,7 @@ $
         as input and output format.
 
 \section{Statement Profiling}
+\label{sec:statement_profiling}
     \subsection{Data Reuse/Locality}
         In this section, we will explain the basics behind data reuse/locality and
         then talk about the different metrics and methods found in the literature used to evaluate
@@ -880,17 +926,13 @@ for(i=0; i<N ; i++)
             \bigskip
 
             Because the LoopCost is loop transformation oriented and because it doesn't
-            use the number of references in a reference group in the computation
-            of the cost, it is not really applicable at our situation.
-            %TODO remove next paragraph? 
-            But if we could change a little the algorithm to add the number of
-            references during the computation of the cost, maybe it would be the
-            solution to decide if 2 statements are aggregated when they share
-            some reuse properties but not all.
+            use the number of references in a reference group for the computation
+            of the cost, it is not really applicable to our situation.
 
             Regarding the RefGroup algorithm that partition the array references
             in group, the criteria used are like the ones for \textit{uniformly generated set}
-            but a little more restrictive, so we won't need it.
+            but a little more restrictive, and we don't need more restrictive, so we won't
+            be able to use them.
             
             
         \subsubsection{Automatic Polyhedral Parallelization and Locality Optimization Algorithm}
@@ -946,29 +988,33 @@ for(i=0; i<N ; i++)
 
 %        \subsubsection{Ehrhart Polynomial Algorithm}
 %            TODO
-            %TODO Ask Loechner
+
+        \subsubsection{The chosen model for Reuse Profile}
+            %TODO
 
     \subsection{Parallelism}
-        %TODO dependence from itself to itself → replace with "self-dependence" and add glossary
         We say that a statement can be parallelized for a certain loop when it is legal to
         execute different \textit{instances} of the statement (so with different iterators)
         on multiple cores at the same time, without violating any dependences. The
-        goal (not always possible) of executing multiple instances at the same tame is to
+        goal (not always possible) of executing multiple instances at the same time is to
         speed up the overall execution of the program.
 
         Unlike \textit{Data Reuse} where we had to find a good way to detect and quantify it
         because there could be more or less \textit{reuse} in a statement, the \textit{Parallelism}
         of a statement doesn't need to be "quantify" : a statement can be either parallelized
-        for a certain loop or it cannot, no more no less.
+        for a certain loop or it cannot : no more, no less.
 
         So in the end, the \textit{Parallelism Profile} of a statement is just the list
         of loop than can be parallelized safely. And to determine which loop can be parallelized
-        safely, we just need to analyze the dependences the statement can have from itself
-        to itself. Dependences in the Polyhedral Model are explained in the Section~\ref{sec:dependence_relations}.
+        safely, we just need to analyze the \glspl{self-dependence} of the statement.
+        We only analyze \gls{self-dependence} because we analyze the statement alone, 
+        like if there is no other statement in the scop, so the only possible dependences
+        are the one from the statement to itself.
+        Dependences in the Polyhedral Model are explained in the Section~\ref{sec:dependence_relations}.
        
         \bigskip
 
-        Because we analyze the dependences a statement have from itself to itself, the only
+        Because we analyze the \glspl{self-dependence} of a statement, the only
         dependence we will find to analyze are Read-after-Write or Write-after-Read dependences :
         \begin{itemize}
             \item Read-after-Read dependences doesn't prevent parallelization because there is no
@@ -984,9 +1030,9 @@ for(i=0; i<N ; i++)
         we need, for all the iterators/loops of the statement, to check if one of the dependences
         is loop-carried :
         \begin{itemize}
-            \item A statement can be parallelized for a certain loop if none of its dependence
-                (from itself to itself) is loop-carried.
-            \item In the contrary if any dependence of a statement is loop-carried for an certain loop,
+            \item A statement can be parallelized for a certain loop if none of its \glspl{self-dependence}
+                are loop-carried.
+            \item In the contrary if any \gls{self-dependence} of a statement is loop-carried for an certain loop,
                 the statement cannot be parallelized for this loop.
         \end{itemize}
         Moreover, if a statement doesn't have \textit{any} dependence, it means that the
@@ -1035,7 +1081,7 @@ for(i=0; i<N ; i++)
 
         Because Vectorization is a special case of Parallelization, the way to detect it
         is a lot like the way to detect parallelization : it involve the analyze of
-        the dependences a statement has to itself. But unlike Parallelization, here we are
+        the \glspl{self-dependence} of a statement. But unlike Parallelization, here we are
         only interested in a certain number of loops. Those loops are the ones whose iterators
         are used either in :
         \begin{itemize}
@@ -1063,7 +1109,7 @@ for(i=0; i<N ; i++)
 
         \bigskip
 
-        We then need to analyze the dependences of the statement from itself to itself :
+        We then need to analyze the \glspl{self-dependence} of the statement :
         \begin{itemize}
             \item If there is no dependence at all, then we can add all the 
                 \textit{candidate loops} to the \textit{Vectorization Profile}.
@@ -1101,32 +1147,456 @@ for(i=1 ; i<N ; i++) {
     C[i]=A[i]*2; // S2
 }
 \end{lstlisting}
-    S1 doesn't have any dependence from itself to itself, so the $i$ loop would be in its
+    S1 doesn't have any \gls{self-dependence}, so the $i$ loop would be in its
     profile. But there is a Write-after-Read dependence between S1 and S2 : this dependence
     make the vectorization of S1 illegal.
 
     So when using the \textit{Vectorization Profile} during an optimization, we need to keep
     checking for inter-statement dependences when trying to vectorize statements.
 
+    %XXX if the size of the vector register is smaller than minimum of all the access
+    %A[i-offset], then we can still vectorize, but it's a borderline case.
+
     \subsection{Tiling Hyperplane}
-    \subsection{Register Pressure}
+        %TODO
+    %\subsection{Register Pressure}
 
 \section{SuBStrAte : Aggregating "Near Behaving" Statements Using Profiling}
-    \subsection{Profiling and rating algorithms}
+    Substrate is the result and the implementation of the work and the research I've done
+    about how to profile the different "attribute" of a statement.\\
+    Substrate is a program that will profile each statement of a \textit{scop} for
+    each each of its "attribute" with the analyze pass.
+
+    It will then try to aggregate
+    statements into what I call \textbf{meta-statement}. Meta-statements are simply
+    aggregated statements seen as one statement (in the way the polyhedral see statements)
+    : it has the same \textit{Domain} and \textit{Scattering} than all its statements,
+    all the memory accesses of all the statements are the memory accesses of the \textit{meta-statement}.
+
+    To aggregate statements into meta-statements, we need to rate the similarity between two
+    statements (or meta-statements) : putting a numerical value to the similarity.
+    If the similarity is high, the rate is high, and if the rate is high, we need to
+    aggregate the statements.
+
+    Si I had to find a way to rate this similarity : transforming the comparison between
+    2 profile into a numerical value.
+
+    \subsection{Statement Profiling}
+    The analyze pass is the direct implementation of all the research done in the section~\ref{sec:statement_profiling}:
+    \begin{itemize}
+        \item The data reuse profile is built by grouping the
+            different memory accesses into array reference group, then uniformly generated set group,
+            then group with the same reuse direction. The harder part here wasn't the
+            implementation but the research part.
+
+        \item The Parallelism profile is built by listing all the loop index that could be
+            parallelized for the statement. It is done by using the loop carried algorithm
+            of the polyhedral model : if for a loop index, not a single one dependence is
+            loop carried by it, then it can be parallelized safely.
+            The catch in our case was that the implementation of this algorithm was in
+            \textbf{CAnDL}, another library/program of the \textit{periscop} suite (a suite of
+            library/program using the OpenScop format). \textit{CAnDL} can compute
+            a lot of things regarding the \textit{dependence} in the \textit{Polyhedral Model},
+            but its implementation of the loop carried algorithm wasn't working due to old
+            changes in \textit{OpenScop} that were never correctly/fully implemented for this
+            function/algorithm.
+            
+            So I had to fix the implementation without breaking anything.
+            Some parts of the code weren't making any sens, slowing me down because I had
+            to figure out what I could safely remove, what I couldn't remove, and what I
+            had to fix.
+
+            In the end, the function is now working, and as a side effect of the time I've taken
+            to fix it, I've added to \textit{CAnDL} a function that compute if a dependence
+            is loop independent or not.
+        \item The Vectorization profile building algorithm
+            , like I explained in the section~\ref{sec:statement_profiling}, is a lot like
+            the Parallelism profile building algorithm, but with some additional checks.
+            In the end, the Vectorization profile is simply the list of loop index for which
+            the statement \textit{could be} vectorized if they were the innermost loop of the loop nest.\\
+
+            And because the fix of the loop carried function of \textit{CAnDL} was done during
+            the implementation of the Parallelism profile, the implementation of the
+            Vectorization profile took a less time.
+        \item The Tiling Hyperplane profile is not done by \textit{Substrate} but by
+            \textbf{Pluto}~\cite{pluto} : \textit{Substrate} merely use the results of
+            \textit{Pluto}'s analyze to get the direction vector of the best Tiling Hyperplane
+            \textit{Pluto} could find.
+
+            But adding \textit{Pluto} to the project proved to be more difficult than expect.
+            \textit{Pluto} build all its dependences itself, but I wanted to avoid that and
+            to have Pluto use my versions of these dependences, but I didn't want to tamper
+            to much with its building process. Also, for \textit{Substrate} I've chosen \textbf{cmake}
+            as the building system, and \textit{cmake} proved to be difficult to deal with in these
+            sort of case.
+
+            In the end, I gave in because I was losing to much time, and I let \textit{Pluto} builds
+            its own dependences, even if it meant a lot of useless compilations.
+    \end{itemize}
+    
+    \subsection{Similarity rating algorithms}
+    To aggregate 2 statements or meta-statements, they need to be similar enough. We characterize
+    this similarity, we propose the following approach :
+    \begin{itemize}
+        \item We rate the similarity between 0 and 1 for each of the 2 statements' profile types
+            (the algorithm are described later).
+        \item We use these rate to compute a weighted average.
+        \item We compare the result of the weighted average to the minimal rate necessary
+            to aggregate and if it is greater or equal to it, we aggregate the statements.
+    \end{itemize}
+    So the user has to give to the program the weight of each profile type as well as the
+    minimal value the weighted average rate need to be to aggregate.
+
+
+    I choose to go with the weighted average rate because it allow us and the users
+    to have a large control over the way \textit{substrate} handles the aggregation.
+    Another reason was that with the proliferation of profile types, we didn't have
+    any concrete idea to automatically weight the different profile types, so I decide
+    to simply give the manual control over it.
         \subsubsection{Data Reuse}
+            The Data Reuse Profile is built as the following : for all memory accesses of
+            a statement, we first group them by reference, then by Uniformly Generated Set,
+            then by reuse direction. The Reuse Profile Rating Algorithm simply count
+            the number of accesses of a statement that would belong to the same reuse
+            direction group (so also the same reference group and Uniformly Generated Set group)
+            of the other rated statement.
+            
+            In other words, the algorithm counts the accesses in direction group that match
+            the same group in the other statement. If a statement has a direction group that doesn't
+            have any matching group with the other statement, then the number of access contained
+            in this group are not counted.
+
+            We then take this counter and divided it by the total number of accesses of
+            the 2 statements.
+
+            For example :
+            %TODO graphviz
+\begin{lstlisting}[frame=single, language=C, caption={Reuse profile rating example}, label={lst:rp_example}]
+for(i=0 ; i<N ; i++)
+    for(j=0 ; j<N ; j++)
+    {
+        A[i][j] = A[i][j+1] + A[i+1][j] + B[i] + B[2*i];    //S1
+        C[i][j] = A[i][j+2];                                //S2
+    }
+\end{lstlisting}
+        In this example, S1 would have the following Reuse Profile :
+        \begin{center}$
+            \{
+                \{ 
+                    \{A[i][j],A[i][j+1]\},
+                    \{A[i+1][j]\}
+                \}
+            \}
+            \{
+                \{
+                    \{B[i]\}
+                \}
+                \{
+                    \{B[2*i]\}
+                \}
+            \}$
+        \end{center}
+            and S2 would have the Reuse Profile :
+        \begin{center}$
+            \{
+                \{
+                    \{C[i][j]\}
+                \}
+            \}
+            \{
+                \{
+                    \{A[i][j+2]\}
+                \}
+            \}$
+        \end{center}
+        we can see that the group ${A[i][j],A[i][j+1]}$ of S1 matches the group ${A[i][j+2]}$
+        of S2 : so we count $3$. There is no other match between the groups of the 2 statements,
+        so the final value of the counter is $3$. The total number accesses is $7$, so the
+        Reuse Rate between the two statement is :
+        \begin{center}
+            $\dfrac{\mathit{Counter}}{\mathit{Total\_number\_accesses}} = \dfrac{3}{7} \approx 0.43$
+        \end{center}
+
+        \bigskip
+
+        You can see that even though S2 just have one access in common with S1, we still get
+        a "relatively" high rate : this is because S1 has the lot of reuse for a particular
+        direction group, and S2 has an access that match that group.
+
+        With a rate of $0.43$, it means that $43\%$ of the 2 statements accesses are
+        accessing the same memory area, with the same direction. Which means that if the
+        CPU cache is big enough, $43\%$ of the memory accesses lead to \textbf{cache hits}.
+            
         \subsubsection{Parallelism}
+            Because the parallelism profile of a statement is simply the list of loop
+            which could be legally parallelized for the statement, we chose to count the
+            loop in common that could be parallelized for both statements, and then
+            divide that by the total number of loop that could be parallelized for either one
+            or the other statement :
+            \begin{center}
+                $ \mathrm{Parallelism\_Rate} =  \dfrac{\mathrm{Card}( {PP_1} \cap {PP_2})}{\mathrm{Card}({PP_1} \cup {PP_2})}$
+            \end{center}
+            with $PP_1$ being the parallelism profile of the first statement, and $PP_2$ the
+            one of the second statements.
+
+            \bigskip
+
+            For example :
+\begin{lstlisting}[frame=single, language=C, caption={Parallelism profile rating example}, label={lst:pp_example}]
+for(i=0 ; i<N ; i++)
+    for(j=0 ; j<N ; j++)
+        for(k=0 ; k<N ; k++)
+            for(l=0 ; l<N ; l++)
+            {
+                S1(i,j,k,l);
+                S2(i,j,k,l);
+            }
+\end{lstlisting}
+        Let say the parallelism profile of S1 and S2 are respectively $\{i,j\}$ and $\{j,k\}$.
+        The parallelism rate between those 2 statements would be :
+        \begin{center}
+            $\dfrac{\mathrm{Card}( \{i,j\} \cap \{j,k\})}{\mathrm{Card}( \{i,j\} \cup \{j,k\})}
+            = \dfrac{\mathrm{Card}( \{i\})}{\mathrm{Card}( \{i,j,k\})}
+            = \dfrac{1}{3}
+            = 0.333...$
+        \end{center}
+
         \subsubsection{Vectorization}
+            Because the Vectorization Profile is, like the Parallelism Profile, simply a list of loop, the rating algorithm for the Vectorization Profile is the same as the one for the Parallelism Profiles :
+            \begin{center}
+                $ \mathrm{Vectorization\_Rate} =  \dfrac{\mathrm{Card}( {VP_1} \cap {VP_2})}{\mathrm{Card}({VP_1} \cup {VP_2})}$
+            \end{center}
+            with $VP_1$ and $VP_2$ the Vectorization Profile of respectively the first and second rated statements.
         \subsubsection{Tiling Hyperplane}
-        \subsubsection{Register Pressure}
-    \subsection{Aggregation algorithms}
+            Because the Tiling Hyperplane Profile is simply the list of vector
+            Pluto has computed for the Hyperplane, we've decided to compute the strict
+            equality for the rating algorithm : 
+            \begin{center}
+                $ \mathrm{Tiling\_Hyperplane\_Rate} =  \left \{
+                    \begin{array}{c}
+                        0.0\text{, if } \mathit{THP}_1 \neq \mathit{THP}_2. \\
+                        1.0\text{, if } \mathit{THP}_1 = \mathit{THP}_2.
+                    \end{array} \right.$
+            \end{center}
+            with $\mathit{THP}_1$ and $\mathit{THP}_2$ the Tiling Hyperplane Profile of 
+            respectively the first and second rated statement.
+
+            We are aware that this rating algorithm doesn't allow to precise control using the
+            Tiling Hyperplane Profile, because of the "All or Nothing" approach of this
+            rating algorithm, but this profile type was the last implemented, and its rating
+            algorithm hasn't mature enough yet.
+        %\subsubsection{Register Pressure}
+
+    \subsection{Statement Profile Aggregation}
+        When we aggregate 2 statements, we also aggregate their different profiles together.
+        Here are the different profile aggregation algorithms.
+        \subsubsection{Data Reuse}
+            In the case of the Data Reuse Profile, we recursively aggregate the Reuse Profiles :
+            \begin{itemize}
+                \item First we try to compare the Reference groups of the 2 Reuse Profiles :
+                    if for the Reference group of a profile there is a Reference group in
+                    the other profile that have accesses to the same array reference, then
+                    we recursively aggregate these 2 Reference groups. If there is no
+                    match, then we just add the Reference group to the new Reuse Profile.
+                \item We then do the same for the Uniformly Generated Set groups of the
+                    Reference groups we are trying to recursively aggregate. Which means we
+                    try to find 2 matching Uniformly Generated Set groups.
+                    If that's the case, we try to recursively aggregate them, if not we simply
+                    add them to the current Reference group of the new Reuse Profile.
+                \item And finally we do the same for the Direction group.
+            \end{itemize}
+            
+            Or in other word, we just fusion matching Direction groups,
+            and add the rest non-matching groups without touching them.
+        \subsubsection{Parallelism}
+            In the case of the Parallelism Profile, we compute the intersection between
+            the list of loop from the first and second Parallelism Profile. The result
+            of the intersection is the Parallelism Profile of the newly aggregated statement.
+        \subsubsection{Vectorization}
+            Because the Vectorization Profile is very similar to the Parallelism Profile, 
+            the Profile Aggregation Algorithm is the same : the intersection between the
+            list of loop from the first and second Vectorization Profile, with the result
+            being the Vectorization Profile of the newly aggregated statement.
+        \subsubsection{Tiling Hyperplane}
+            In the case of the Tiling Hyperplane Profile, because it is so tied to how
+            Pluto works, and because Pluto can compute a different Tiling Hyperplane
+            of an aggregated statement from the ones it computed when the statements weren't
+            aggregated, we decide to let Pluto re-compute the Tiling Hyperplane for the newly
+            aggregated statement : we simply delegate it to Pluto.
+        %\subsubsection{Register Pressure}
+
+    \subsection{Statement Aggregation Strategy}
+        Now that we have defined how we rate the similarity between the profiles of 2 statement,
+        it is possible to use the similarity rate to aggregate or not 2 statements, but
+        we still need to define an aggregation strategy : should we start from the first
+        statement, the last or the one in the middle ? Should we aggregate in that order
+        or this order ? Should we introduce some randomness ?
+
+        In the end, we did not have enough time to implement more than one strategy. We
+        have some ideas for additional strategies, and they are described in the section
+        \ref{sec:future_works}. We will present here the only strategy that is currently implemented
+        in \textit{Substrate}.
         \subsubsection{Simple Successive Statements Aggregation}
-        \subsubsection{Successive Statements Aggregation with Greedy Algorithm}
-        \subsubsection{Statements Aggregation using Graphs with Greedy Algorithm}
+            The Simple Successive Statements Aggregation Algorithm (SSSAA) iterate through
+            the statements of a scop, from the first statement of the scop to the last.
+            For each statement S1, it look at the next statement S2 in the scop, and
+            check if :
+            \begin{itemize}
+                \item S1 and S2 share the same Domain Matrix.
+                \item S1 and S2 share the same Scattering Matrix, and the same beta depth
+                    (i.e. they are in the same loop nest and have the same depth in that nest).
+            \end{itemize}
+            If these conditions are met, SSSAA then rate the similarity between S1 and S2,
+            and if the rate is greater or equal to the minimal rate the user gave to \textit{Substrate}
+            then it aggregate S1 and S2 into S3. S3 then take the place of S1, and everything start
+            over.
+
+            If the conditions are not met, then S2 take the place of S1 and everything start over.
+            
 
 \section{Experiments and Results}
+%TODO
 
+    
 \section{Conclusions}
+The goal of this internship was to study smart ways to aggregate several statements
+together to achieve a better performance as well as a better scalability for polyhedral
+compilation frameworks.
 
+\bigskip
+
+We've started with the idea that similar or \textit{near behaving} statements should be
+aggregated (considered as one instead of two). So we had to come up with a way to characterize
+the "similarity" between two statements. For that purpose, we've proposed a model where
+each statement is associated with a list of profile built during the analyze pass.
+Each profile correspond to a different property a statement can have like \textit{Data Reuse},
+\textit{Parallelism} etc...\\
+These profiles are a way to quantify or at least measure those properties, and this quantification
+allow us to compare the profiles of 2 statements, with numbers. By comparing the profiles
+of 2 statements, we are able to compute the Similarity Rate between them, and with that we're
+able to characterize the similarity between 2 statements.\\
+We have successfully implemented in \textit{Substrate} the profiles and rating algorithms of :
+\textit{Data Reuse}, \textit{Parallelism}, \textit{Vectorization}, \textit{Tiling Hyperplane}.
+
+The next things we needed to do was to find Aggregation Strategies. An Aggregation Strategy
+determine the way we plan to rate the similarity and aggregate the statements in a scop : in what
+order, with or without randomness, with or without human help etc...\\
+For now, only one Aggregation Strategy is implemented in \textit{Substrate},
+and it is "Simple Successive Statements Aggregation Algorithm" (SSSAA).
+SSSAA try to aggregate only successive statements, from the first to the last
+statement of the scop, and even though it is a relatively simple algorithm, the results we
+are getting by using it are promising.\\
+Even though we've seen that our approach is not always applicable, when it does
+we have noticed good runtime speedups from some benchmark program, and an overall
+speedup of the time taken by \textit{Pluto} to optimize after us in when we were able to
+aggregate some statements.
+
+    \subsection{What this internship has brought to me}
+        I'm happy to say that I have learn a lot of and about new things during this internship :
+        the Polyhedral Model, Data Reuse and Locality, Parallelism and Vectorization detection
+        in the Polyhedral Model, Tiling Hyperplane, and some other.\\
+        To do that, I had to to read, understand and summarize scientific papers which made
+        me a little bit used to it.
+        One of my goal was to learn and discover new things about compilation and optimization,
+        and this goal is clearly achieved for me.
+
+        I also wanted to know if I had what it takes to work in the Research and if I wanted
+        to try to do a PhD thesis about compilation and optimization. This internship gave me
+        the opportunities to answer some of my question and even though some of them were
+        not answered, I'm still glad to have learned things about myself.\\
+        Without this internship, I think I would have never tried to apply for a PhD thesis.
+
+        This internship was also the occasion to practice my programming skills. I didn't
+        really learn anything new in C and Python programming, but it felt really nice to
+        program in C again, and I had to contribute to some existing projects, and it was
+        the first time I was the object of a code review : it was, I think, an important experience.
+
+        An aspect of the internship I didn't expect to do was that I had to schedule myself
+        my time and my work : what I needed to do, when I should do it etc... At first I
+        was a little bit confused because I did not expect to be \textbf{this} free. But
+        I am autonomous by nature so I've quickly adjusted to this situation.
+
+        And finally, there is one more thing I did not expect to do : practice my English skills.\\
+        Because the ICPS team has a lot of foreigner, English is used a lot, and it has forced
+        me to practice my English, to speak and understand people speaking with different accent.
+        And of course I also had to practice my writing with this report.
+        I am now more confident about my skills and I really less afraid to speak in English
+        anymore : I know more about my strengths and weaknesses in English, and it doesn't
+        keep me from trying anymore.
+
+
+\section{Future Works}
+\label{sec:future_works}
+At this point in the internship and for this subject, there is still many
+questions to answer, problems to solve and many opportunities of improvement.
+In this section, we want to mention what ideas we have for future works on \textit{Substrate},
+what could be done before the end of the internship, and what would conceivable with more time.
+    \subsection{Additional Profiles Types}
+        First, we would like to add more Profile Types to the Profile of the statements,
+        like \textbf{Register Pressure}. It could be the key to better aggregations and would
+        give us a more complete framework to work with for scop optimization.\\
+
+        We are planning to implement the \textbf{Register Pressure} before the end of the
+        internship, and to study if this property is significant enough to be used in the
+        computation of the \textit{Similarity Rate}.
+    \subsection{Additional Aggregation Strategies}
+        There is only one Aggregation Strategy implemented in \textit{Substrate}, but
+        there is still some things we could try. Were would like to 
+        \paragraph{Successive Statements Aggregation with Greedy Algorithm}
+            Instead of trying to aggregate the statements from the first to the last
+            of the scop being optimized, maybe we should try to use a greedy algorithm
+            to chose which successive statements of the scop should be aggregated first : the
+            the 2 successive statements that show the best Similarity Rate are aggregated
+            first, then we pick the new 2 successive statements with the best Similarity Rate etc...
+            until the Similarity Rate between all successive statements are below the minimum rate.\\
+        \paragraph{Statements Aggregation using Graphs with Greedy Algorithm}
+            The \textit{Successive Statements Aggregation with Greedy Algorithm} only
+            try to aggregate successive statements, statements with the same domain,
+            the same scattering and the same beta depth, but maybe we could try to
+            use the Greedy Algorithm with the Similarity Rate between all statements,
+            and try to move and relocate some statements (if the move is legal),
+            making them successive, then aggregating them.
+        \paragraph{Statements Aggregation using Neural Network}
+            We could try to use Neural Network or other Genetic Algorithm, instead
+            of Greedy Algorithm, to chose which statement needs to be aggregated to
+            maximize the overall similarity of the scop.
+    \subsection{Too much different Statement Separator Program}
+        One of the goal of this internship was to find a way to aggregate statements
+        of a scop to trigger better optimizations, or prevent bad optimizations or even
+        reduce the complexity of some optimization.
+
+        But in some cases, it could be beneficial to force 2 statements to be separated
+        from each other, because together they prevent some optimization to be applied,
+        or they interfere with each other.
+
+        For example, take the following case :
+\begin{lstlisting}[frame=single, language=C, caption={Statements Separation example}, label={lst:stmt_sep_example}]
+for (i = 0; i < size; i++) {
+for (j = 0; j < size; j++) {
+    sum += A[i][j]; //S1
+    A[i][j] = 0.;   //S2
+}
+}
+\end{lstlisting}
+        In this code, S2 could be fully parallelized if alone but not S1, and there is
+        some reuse between S1 and S2.
+
+        But if we separate S1 and S2 in 2 different loop nest and fully parallelize S2,
+        the resulting code could be faster than the original one. Or maybe not, because
+        we would have to trade some reuse for parallelism, and it could be slower.
+        
+        The question is left open, and that's why we would like to try and answer it, and it
+        would be a good trail to follow during a possible PhD thesis.
+    \textit{Dynamic Optimization}
+        For now, the optimization is done statically and it necessitates the inputs of an
+        user. Another approach could be to perform the optimization dynamically, at runtime,
+        by collecting information during the execution of the program, and with them
+        determining automatically which profiles are the most relevant for this scop, at
+        this moment of the execution, etc...\\
+        This question would also be a good starting point for a possible PhD thesis.
+
+            
+\printglossary
 
 \bibliographystyle{plain}
 \bibliography{biblio}
