@@ -742,6 +742,7 @@ for(i=0; i<N ; i++)
                 A statement being generally composed of multiple references, it 
                 can be hard to automatically favor some statements instead of others.
         \subsubsection{Reuse Vector Space}
+        \label{sec:wolf_91}
             The notion of Reuse Vector Space come from Wolf et. al.\cite{Wolf'91} and describe
             the vector subspace of the Iteration vector space where the reuse of
             a reference can be taken advantage to induce locality.
@@ -766,13 +767,13 @@ for(i=0; i<N ; i++)
             \begin{defn}
             \label{sec:uniformly_generated}
                 Let $n$ be the depth of a loop nest, and $d$ be the dimensionality of
-                an array $A$. Two references $A[\vec{f}(\vec{\imath})]$ and
-                $A[\vec{g}(\vec{\imath})]$, where $\vec{f}$ and $\vec{g}$ are indexing
+                an array $A$. Two references $A[\vec{a}(\vec{\imath})]$ and
+                $B[\vec{b}(\vec{\imath})]$, where $\vec{a}$ and $\vec{b}$ are indexing
                 functions $Z^{n} \rightarrow Z^{n}$, are called \textbf{uniformly generated} if :
                 \begin{center}
-                    $\vec{f}(\vec{\imath}) = H\vec{\imath}+\vec{c}_f$ and $\vec{g}(\vec{\imath}) = H\vec{\imath}+\vec{c}_g$
+                    $\vec{a}(\vec{\imath}) = H\vec{\imath}+\vec{c}_a$ and $\vec{b}(\vec{\imath}) = H\vec{\imath}+\vec{c}_b$
                 \end{center}
-                where $H$ is a linear transformation and $\vec{c}_f$ and $\vec{c}_g$ are constant vectors.
+                where $H$ is a linear transformation and $\vec{c}_a$ and $\vec{c}_b$ are constant vectors.
             \end{defn}
             
             We can partition references into equivalence class, called \textit{uniformly generated sets},
@@ -836,21 +837,7 @@ for(i=0; i<N ; i++)
             \medskip
 
             So the definition of the \textit{uniformly generated set} is not restrictive enough,
-            and in out case, we propose an addition to it : for two references $A$ and
-            $B$ (as expressed in Definition~\ref{sec:uniformly_generated}) to be in the same class :
-            \begin{itemize}
-                \item They need to have the same $H$.
-                \item with $\vec{c}=\vec{c_g} - \vec{c_f}$, $\vec{c}$ need to have $0$
-                    for all the elements of the vector \textbf{except one}.
-            \end{itemize}
-
-            %TODO clarifier les choses, et peut être au lieu de mentionner les méthodes
-            %de Wolf, les expliquer içi.
-
-            The reuse spaces would then be computed for each type of reuse
-            with the methods described in~\cite{Wolf'91} : statements where
-            array references share the same reuse space should be aggregated (if
-            it doesn't violate any data dependence).
+            but we will use it as a base for our model.
 
 
 
@@ -936,6 +923,7 @@ for(i=0; i<N ; i++)
             
             
         \subsubsection{Automatic Polyhedral Parallelization and Locality Optimization Algorithm}
+        \label{sec:auto_poly_paral}
             Let $S_i$ and $S_j$ two statement of a program with a data dependence $e$
             from $S_i$ to $S_j$.\\
             Let $\vec{s}$ and $\vec{t}$ the iterators of respectively $S_i$ and $S_j$.\\
@@ -979,7 +967,7 @@ for(i=0; i<N ; i++)
             \end{center}
             where $P_e^k$ is a face of $P_e$.
 
-            From this new form, we can get a linear system (formed by equalities and
+            Thanks to this new form, we can get a linear system (formed by equalities and
             inequalities), which can then be handled by PIP software to find
             minimal solution to it.
 
@@ -990,7 +978,64 @@ for(i=0; i<N ; i++)
 %            TODO
 
         \subsubsection{The chosen model for Reuse Profile}
-            %TODO
+            In the end, characterize Data Reuse for the Reuse Profile, we decided to
+            sort the different accesses of a statement and group recursively into classes.
+
+            For that, we reuse the notions of Uniformly Generated Sets used in the paper~\cite{Wolf'91}
+            explained in the section~\ref{sec:wolf_91}, but we propose an addition to it :
+            a reference (as expressed in Definition~\ref{sec:uniformly_generated}) $A$ is 
+            grouped intro the same class with an reference $B$ to be in the same class if :
+            \begin{itemize}
+                \item They reference the same name variable/array.
+                \item They have the same $H$ matrix.
+                \item Let $\vec{c}=\vec{c}_b - \vec{c}_a$, $\vec{c}$ need to have a $0$
+                    for all elements of the vector \textbf{except one}, the one corresponding
+                    to the dimension carrying the reuse : if we're in row-major, that's the
+                    last element of the vector, and if we're in column-major, that's the first
+                    element. Basically, this condition just says that the two accesses need
+                    to be exactly the same except for the reuse dimension.
+            \end{itemize}
+
+            \bigskip
+
+            To illustrate this model, take the following example :
+
+\begin{lstlisting}[frame=single, language=C, caption=Reuse Profiling example, label={lst:rp_example_0}]
+for(i=0; i<N ; i++)
+    for(j=0; j<N ; j++)
+    {
+        A[i][j] = (A[i][j-1] + A[i][j+1] + A[i-1][j] + A[i+1][j]) + A[2*i][j] + B[i][j]) / 6.0; //S1
+    }
+\end{lstlisting}
+
+        Here, for the Reuse Profile of S1, we would :
+        \begin{itemize}
+            \item* First group the accesses by reference name, so we would have the reference
+                class for the array $A$ : $\{A[i][j],A[i][j-1],A[i][j+1],A[i-1][j],A[i+1][j],A[2*i][j]\}$
+                and a class for the array $B$ : $\{B[i][j]\}$.
+            \item* Then we would take each reference class and group their accesses in class
+                according to their Uniformly Generated Set.\\
+                For the class $A$, we would have the following classes :
+                    \begin{itemize}
+                        \item class $(1,1)$ : $\{A[i][j],A[i][j-1],A[i][j+1],A[i-1][j],A[i+1][j]\}$.
+                        \item class $(2,1)$ : $\{A[2*i][j]\}$.
+                    \end{itemize}
+                For the class $B$, we would have the following class : class $(1,1)$ : $\{B[i][j]\}$.
+            \item* Then we would take each Uniformly Generated Set classes and group their
+                access according to the resulting $\vec{c}$ vector :
+                For the class $(1,1)$ of $A$, we would get the following reuse classes :
+                \begin{itemize}
+                    \item $\{A[i][j],A[i][j-1],A[i][j+1]\}$.
+                    \item $\{A[i-1][j]\}$.
+                    \item $\{A[i+1][j]\}$.
+                \end{itemize}
+                For the class $(2,1)$ of $A$, we would get the class $\{A[2*i][j]\}$, and
+                for the class $(1,1)$ of $B$, we would get the class $\{B[i][j]\}$
+        \end{itemize}
+        
+        Because an image worth a thousand words, the Reuse Profile of S1 would look like this :
+        %TODO graphviz
+
 
     \subsection{Parallelism}
         We say that a statement can be parallelized for a certain loop when it is legal to
@@ -1158,7 +1203,35 @@ for(i=1 ; i<N ; i++) {
     %A[i-offset], then we can still vectorize, but it's a borderline case.
 
     \subsection{Tiling Hyperplane}
-        %TODO
+        A Tiling Hyperplane is an hyperplane according to which we could tile a loop nest.
+        
+        There is generally a lot of Tiling Hyperplane possible of a loop nest, and the difficulty
+        is to find the optimal one.
+
+        The paper~\cite{Bondhugula:2008:PAP:1379022.1375595}, described in the section~\ref{sec:auto_poly_paral}
+        describes an algorithm that should compute the best Tiling Hyperplane for automatic
+        parallelization and locality optimization.
+
+        This algorithm is implemented in a program called \textbf{Pluto}~\cite{pluto} (which also
+        use the Polyhedral Model) and its results are really impressive.
+
+        Because of that, we had the idea to use the Tiling Hyperplane computed by \textit{Pluto}
+        as a property of a statement : after all, the Tiling Hyperplane computed is the way
+        of \textit{Pluto} to see the statement.
+
+        The Tiling Hyperplane Profile of a statement would simply be composed
+        of the Tiling Hyperplane vectors/matrix \textit{Pluto} has computed for
+        it when it is alone : meaning that we remove every other
+        statement of the scop so that Pluto compute the Tiling Hyperplane for this \textit{specific}
+        statement).
+
+        %\bigskip
+
+        %But the way we see the Tiling Hyperplane Profile is a little different from the way we see
+        %the other profile types. Every other profile types can be used alone to aggregate
+        %statements solely based on them, but the way we see the Tiling Hyperplane Profile is
+        %that it needs to be used in partnership with other profile types, but not alone.
+        %Because using it alone would 
     %\subsection{Register Pressure}
 
 \section{SuBStrAte : Aggregating "Near Behaving" Statements Using Profiling}
@@ -1511,10 +1584,10 @@ aggregate some statements.
         program in C again, and I had to contribute to some existing projects, and it was
         the first time I was the object of a code review : it was, I think, an important experience.
 
-        An aspect of the internship I didn't expect to do was that I had to schedule myself
-        my time and my work : what I needed to do, when I should do it etc... At first I
-        was a little bit confused because I did not expect to be \textbf{this} free. But
-        I am autonomous by nature so I've quickly adjusted to this situation.
+        An aspect of the internship I didn't expect to do was that I had to organize myself
+        my time and my work : what I needed to do, when I should do it etc... It's not that I
+        am not capable of being autonomous, it's just that I wasn't expecting to be
+        \textbf{this} free. But I am autonomous by nature so I've quickly picked up the pace.
 
         And finally, there is one more thing I did not expect to do : practice my English skills.\\
         Because the ICPS team has a lot of foreigner, English is used a lot, and it has forced
