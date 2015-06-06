@@ -27,7 +27,7 @@
 %\title{Project Report}
 %
 %%% Preamble
-\documentclass[paper=a4, fontsize=11pt]{scrartcl}
+\documentclass[paper=a4, fontsize=11.5pt]{scrartcl}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{fourier}
@@ -36,6 +36,8 @@
 \usepackage[protrusion=true,expansion=true]{microtype}  
 \usepackage{amsmath,amsfonts,amsthm} % Math packages
 \usepackage[pdftex]{graphicx}   
+\usepackage{grffile}
+\usepackage{float}
 \usepackage{url}
 \usepackage{listings}
 \usepackage{arydshln}
@@ -66,6 +68,7 @@
 
 \setcounter{secnumdepth}{4} % default value for 'report' class is "2"
 
+\usepackage{geometry}
 
 %%% Maketitle metadata
 \newcommand{\horrule}[1]{\rule{\linewidth}{#1}}     % Horizontal rule
@@ -1203,6 +1206,7 @@ for(i=1 ; i<N ; i++) {
     %A[i-offset], then we can still vectorize, but it's a borderline case.
 
     \subsection{Tiling Hyperplane}
+        %TODO explain Hyperplane
         A Tiling Hyperplane is an hyperplane according to which we could tile a loop nest.
         
         There is generally a lot of Tiling Hyperplane possible of a loop nest, and the difficulty
@@ -1492,11 +1496,22 @@ for(i=0 ; i<N ; i++)
             being the Vectorization Profile of the newly aggregated statement.
         \subsubsection{Tiling Hyperplane}
             In the case of the Tiling Hyperplane Profile, because it is so tied to how
-            Pluto works, and because Pluto can compute a different Tiling Hyperplane
+            Pluto works, and because Pluto can possibly compute a different Tiling Hyperplane
             of an aggregated statement from the ones it computed when the statements weren't
             aggregated, we decide to let Pluto re-compute the Tiling Hyperplane for the newly
             aggregated statement : we simply delegate it to Pluto.
         %\subsubsection{Register Pressure}
+        \subsubsection{Polyhedral Representation}
+            We also need to aggregate the Polyhedral Representation of the 2 statements.
+            Because the 2 statements need to have the same \textit{Domain Relation}, should be
+            successive and have the same loop depth, then the aggregated statement will have
+            the same \textit{Domain Relation} and \textit{Scattering Relation} than the first
+            statement. For the \textit{Access Relations} of the result statement, we
+            are computing the union of \textit{Access Relations} of the 2 aggregated statements :
+            if there is duplicate \textit{Access Relations}, we only keep one copy.
+            By doing so, we decrease the overall number of dependences between statements,
+            thus decreasing the complexity of the representation.
+            
 
     \subsection{Statement Aggregation Strategy}
         Now that we have defined how we rate the similarity between the profiles of 2 statement,
@@ -1509,8 +1524,8 @@ for(i=0 ; i<N ; i++)
         have some ideas for additional strategies, and they are described in the section
         \ref{sec:future_works}. We will present here the only strategy that is currently implemented
         in \textit{Substrate}.
-        \subsubsection{Simple Successive Statements Aggregation}
-            The Simple Successive Statements Aggregation Algorithm (SSSAA) iterate through
+        \subsubsection{Successive Statements Aggregation}
+            The Successive Statements Aggregation Algorithm (SSAA) iterate through
             the statements of a scop, from the first statement of the scop to the last.
             For each statement S1, it look at the next statement S2 in the scop, and
             check if :
@@ -1519,7 +1534,7 @@ for(i=0 ; i<N ; i++)
                 \item S1 and S2 share the same Scattering Matrix, and the same beta depth
                     (i.e. they are in the same loop nest and have the same depth in that nest).
             \end{itemize}
-            If these conditions are met, SSSAA then rate the similarity between S1 and S2,
+            If these conditions are met, SSAA then rate the similarity between S1 and S2,
             and if the rate is greater or equal to the minimal rate the user gave to \textit{Substrate}
             then it aggregate S1 and S2 into S3. S3 then take the place of S1, and everything start
             over.
@@ -1528,7 +1543,307 @@ for(i=0 ; i<N ; i++)
             
 
 \section{Experiments and Results}
-%TODO
+In this section, we will discuss the experiments we've conducted and the consequences
+of their results.
+We need to keep in mind in this section that currently, only the aggregation strategy 
+"Successive Statement Aggregation Algorithm" (SSAA) is implemented and used by \textit{Substrate}.
+So when we say than \textit{Substrate} is aggregating statement, it is implied that it uses
+the SSAA.
+
+\bigskip
+
+From the beginning, we wanted to beat \textit{Pluto}, which is consider as
+one of, if not THE one, best optimizer available today.\\
+Of course, it is impossible for us, at least for now, to go completely without using \textit{Pluto}:
+we still use \textit{Pluto} to optimize, but it now takes its input from us, and does
+not come first.
+
+What we do is that we give to \textit{Pluto} the scop we have optimized with \textit{Substrate}.
+We then take the optimized code it to produce from our optimized scop,
+and compare its performance with the optimzed code \textit{Pluto} would have produce from
+the original code, without our help.
+
+We proceed this way because we noticed that in some case, \textit{Pluto} wasn't able
+to find the best optimization possible, sometimes even producing optimized code that would
+perform worse than the original, non optimized, code. So we wanted to see if we could
+guide \textit{Pluto}, so that it can find the best optimization possible.
+
+But first, we need to discuss about the program we used for our experiments. With the subject
+of this internship was given a concrete example of a code that we knew Pluto was not able to optimize correctly.
+The original code is the following :
+\begin{lstlisting}[frame=single, language=C, caption={Origin Conventional Beamforming kernel}, label={lst:original_conventional_beamforming}]
+for (i = 0; i < N; i++) {   //L1
+  a_i[i] = 0;                                           //S1
+  a_r[i] = 0;                                           //S2
+  for (j = 0; j < M; j++) { //L2
+    a_r[i] += s_r[j] * m_r[i][j] - s_i[j] * m_i[i][j];  //S3
+    a_i[i] += s_i[j] * m_r[i][j] + s_r[j] * m_i[i][j];  //S4
+  }
+  val = a_r[i] * a_r[i] + a_i[i] * a_i[i];              //S5
+  t = (val >= t_val)? (t_val = val, i) : t;             //S6
+}
+\end{lstlisting}
+we can that S3 and S4 share a lot of data reuse. But if we give this code to \textit{Pluto},
+it will separate S3 and S4 in 2 different parallel loop, loosing the data locality, as you
+can see in Listing~\ref{lst:pluto_conventional_beamforming} :
+\begin{minipage}[t]{0.45\textwidth}
+\begin{lstlisting}[frame=single, language=C, basicstyle=\scriptsize, caption={Conventional Beamforming kernel optimized by Pluto}, label={lst:pluto_conventional_beamforming}]
+#pragma omp parallel for
+for (i = 0; i <= N - 1; i++)
+  a_r[i] = 0;
+
+#pragma omp parallel for
+for (i = 0; i <= N - 1; i++)
+  for (j = 0; j <= M-1; j++)
+    a_r[i] += s_r[j] * m_r[i][j]
+      - s_i[j] * m_i[i][j];
+
+#pragma omp parallel for
+for (i = 0; i <= N - 1; i++)
+  a_i[i] = 0;
+
+#pragma omp parallel for
+for (i = 0; i <= N - 1; i++)
+  for (j = 0; j <= M - 1; j++)
+    a_i[i] += s_i[j] * m_r[i][j]
+      + s_r[j] * m_i[i][j];
+
+for (i = 0; i <= N - 1; i++) {
+  val = a_r[i] * a_r[i] + a_i[i] * a_i[i];
+  t = (val >= t_val)? (t_val = val, i) : t;
+}
+\end{lstlisting}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.45\textwidth}
+\begin{lstlisting}[frame=single, language=C, basicstyle=\scriptsize, caption={Goal version of Conventional Beamforming kernel}, label={lst:substrate_conventional_beamforming}]
+#pragma omp parallel for
+for (i = 0; i <= N - 1; i++) {
+  a_r[i] = 0;
+  a_i[i] = 0;
+  for (j = 0; j <= M - 1; j++) {
+    a_r[i] += s_r[j] * m_r[i][j]
+      - s_i[j] * m_i[i][j];
+    a_i[i] += s_i[j] * m_r[i][j]
+      + s_r[j] * m_i[i][j];
+  }
+}
+
+for (i = 0; i <= N - 1; i++) {
+  val = a_r[i] * a_r[i] + a_i[i] * a_i[i];
+  t = (val >= t_val)? (t_val = val, i) : t;
+}
+\end{lstlisting}
+\end{minipage}
+But as you can see in Listing~\ref{lst:substrate_conventional_beamforming}, the best optimization
+would be to let S3 and S4 together in a parallel loop, thus exploiting the data locality
+shared by them.
+
+\bigskip
+
+All of this to explain why Listing~\ref{lst:original_conventional_beamforming} became one
+of the program of our benchmark suit. But we needed more program, and those program need to
+fit the Polyhedral Model, so decided to use the ones provided by the \textbf{PolyBench},
+the Polyhedral Benchmark suite, which contains a lot of different code, all of them fitting
+the Polyhedral Model. It was also the occasion to try and see how many program of the \textit{PolyBench}
+was affected by \textit{Substrate} : if it was even possible to aggregate some of their statements.
+
+What we found was that only 7 programs out of the 30 of the \textit{PolyBench} are eligible
+ for our benchmark suit : bicg.c , correlation.c, covariance.c, deriche.c, durbin.c, gesummv.c, symm.c.
+The other programs of \textit{PolyBench} were not eligible because none of their statements could be
+aggregated by \textit{Substrate}, even when run with the lowest minimum aggregation rate possible : 0.0.
+The reasons for that are that these programs are either too short, either every of their
+successive statements have different \textit{Domain Matrix} or either they have no similarity at all.
+All of these reasons resulting in zero aggregation. It is however important to remark that
+this number could possibly change with an aggregation strategy different from SSAA.
+
+\bigskip
+
+In the end, our benchmark suit is comprised of the 7 selected programs of the \textit{PolyBench}
+and the Conventional Beamforming kernel (Listing~\ref{lst:original_conventional_beamforming}).
+
+\subsection{Number of statement aggregated per Profile Type}
+\label{sec:nb_stmt}
+
+Even though \textit{Substrate} can do multi-criteria aggregation, we wanted to see first what
+the results would be for simple mono-criteria aggregations.\\
+We first wrote a script running \textit{Substrate} on our benchmark suit, forcing it to
+only aggregate statements according to one Profile Type, for each Profile Type implemented
+and minimal aggregation rate ranging from 0.0 to 1.0.\\
+
+We were interested to see how many statement were aggregated per Profile Type and per minimal
+aggregation rate. The results are shown in the next pages.
+
+We can already notice that bicg.c and symm.c (Figure~\ref{fig:nb_stmts:bicg}|\ref{fig:nb_stmts:symm})
+doesn't show a lot of similarity : just some reuse for low aggregation rate, but that's all.
+The same can be said for durbin.c (Figure~\ref{fig:nb_stmts:durbin}) : the only profile type
+inducing aggregation is Tiling Hyperplane, but as we said before this Profile Type should not
+be used alone.
+What it means is that \textit{Substrate} is not really useful for these program. Even though
+it can aggregate some statement, their similarity is too low to be useful. On the contrary
+it could be harmful because it could prevent good optimization to happen.
+
+gesummv.c seems promising because it show enough similarity for aggregation even at high
+minimal aggregation rate. Only data reuse is left behind, with statements aggregation only
+for low minimal aggregation rate.
+
+The next 3 programs (conventional\_beamforming.c, correlation.c, covariance.c) show a lot of
+similarity : there is aggregation even with high minimal aggregation rate ( 0.6), and
+there is generally 3 Profile Type inducing these aggregation, meaning that those aggregated 
+statements share similarity for more than one or two of their properties.
+
+And finally there is deriche.c (Figure~\ref{fig:nb_stmts:deriche}). deriche.c show good
+Data Reuse and Tiling Hyperplane similarity.\\
+
+To be clear, these results only show us how much useful \textit{Substrate} could \textbf{potentially} be.
+To be sure, we need to confront these result to the time we get for them during their optimization by Pluto
+and during their execution.
+
+
+%\newgeometry{
+    %bottom=40mm}
+\begin{figure}[H]
+    \center
+    \includegraphics[width=\linewidth]{results/nb_stmts/bicg.c.scop.results}
+    \caption{bicg.c}\label{fig:nb_stmts:bicg}
+    \includegraphics[width=\linewidth]{results/nb_stmts/symm.c.scop.results}
+    \caption{symm.c}\label{fig:nb_stmts:symm}
+\end{figure}
+\begin{figure}[H]
+    \center
+    \includegraphics[width=\linewidth]{results/nb_stmts/durbin.c.scop.results}
+    \caption{durbin.c}\label{fig:nb_stmts:durbin}
+    \includegraphics[width=\linewidth]{results/nb_stmts/gesummv.c.scop.results}
+    \caption{gesummv.c}\label{fig:nb_stmts:gesummv}
+\end{figure}
+\begin{figure}[H]
+    \center
+    \includegraphics[width=\linewidth]{results/nb_stmts/conventional_beamforming.c.scop.results}
+    \caption{conventional\_beamforming.c}\label{fig:nb_stmts:conv_beam}
+    \includegraphics[width=\linewidth]{results/nb_stmts/correlation.c.scop.results.png}
+    \caption{correlation.c}\label{fig:nb_stmts:correlation}
+\end{figure}
+\begin{figure}[H]
+    \center
+    \includegraphics[width=\linewidth]{results/nb_stmts/covariance.c.scop.results}
+    \caption{covariance.c}\label{fig:nb_stmts:covariance}
+    \includegraphics[width=\linewidth]{results/nb_stmts/deriche.c.scop.results}
+    \caption{deriche.c}\label{fig:nb_stmts:deriche}
+\end{figure}
+\restoregeometry
+
+\subsection{Speedup of Pluto's runtime}
+
+We know that aggregating statements reduce the complexity of the polyhedral representation
+of a program, because it means less statements and less dependences (because in the case
+of statements sharing identical memory accesses, the duplicate accesses are removed when aggregated).
+But we wanted to see if a less complex polyhedral representation really leads to shorter
+times of optimization, at least from \textit{Pluto}.
+
+\bigskip
+
+To test that, we wrote a script that calls \textit{Pluto} to optimize every optimized scop produced
+by \textit{Substrate} in the section~\ref{sec:nb_stmt} (so per Profile Type and minimal aggregating rate),
+and record the time it took. The script then do the same but this time with the scop of
+the original source code of the program, so \textbf{not optimized} by \textit{Substrate}.\\
+Every time \textit{Pluto} was called was with the option \verb'--parallel', and the benchmark
+was run on a T9400 (Intel Core 2 Duo, 2.53GHz) with 2GB of DDR2.
+
+\bigskip
+
+We then compare the time it took for \textit{Pluto} to optimize with our optimized scop and
+the original scop. The results can be found in the next pages.
+
+To understand them, we need to compare each of them to their respective graph in the section~\ref{sec:nb_stmt}.
+If we do that, we can see that almost every time statements are aggregated in a program,
+there is a speedup of Pluto's runtime. The speedup is generally around 1.2 (bicg.c, symm.c, durbin.c, covariance.c),
+but it can get higher like 1.5 for correlation.c and 1.9 for deriche.c . It seems like there
+is a correlation between the number or percentage of aggregated statements in a program and
+the speedup we get for \textit{Pluto}'s runtime : higher is the percentage of aggregation,
+higher is the speedup.
+
+\bigskip
+
+These results are encouraging because they would mean that even if our optimization pass
+may doesn't always induce better final code optimization, it still induces faster runtime
+for optimizer.
+
+\bigskip
+
+Of course, we need to show that the time we lose when \textit{Substrate} optimize a scop
+doesn't outweigh the time we gain with \textit{Pluto}. This is not done yet, but we are planning
+to do it before the end of the internship.
+
+
+%\newgeometry{
+    %bottom=40mm}
+\begin{figure}[H]
+    \center
+    \includegraphics[width=\linewidth]{results/pluto/bicg.c.results}
+    \caption{bicg.c}\label{fig:pluto:bicg}
+    \includegraphics[width=\linewidth]{results/pluto/symm.c.results}
+    \caption{symm.c}\label{fig:pluto:symm}
+\end{figure}
+\begin{figure}[H]
+    \center
+    \includegraphics[width=\linewidth]{results/pluto/durbin.c.results}
+    \caption{durbin.c}\label{fig:pluto:durbin}
+    \includegraphics[width=\linewidth]{results/pluto/gesummv.c.results}
+    \caption{gesummv.c}\label{fig:pluto:gesummv}
+\end{figure}
+\begin{figure}[H]
+    \center
+    \includegraphics[width=\linewidth]{results/pluto/conventional_beamforming.c.results}
+    \caption{conventional\_beamforming.c}\label{fig:pluto:conv_beam}
+    \includegraphics[width=\linewidth]{results/pluto/correlation.c.results.png}
+    \caption{correlation.c}\label{fig:pluto:correlation}
+\end{figure}
+\begin{figure}[H]
+    \center
+    \includegraphics[width=\linewidth]{results/pluto/covariance.c.results}
+    \caption{covariance.c}\label{fig:pluto:covariance}
+    \includegraphics[width=\linewidth]{results/pluto/deriche.c.results}
+    \caption{deriche.c}\label{fig:pluto:deriche}
+\end{figure}
+\restoregeometry
+
+
+
+\subsection{Speedup of the program runtime}
+
+Test
+
+%\newgeometry{
+    %bottom=40mm}
+\begin{figure}[H]
+    \center
+    \includegraphics[width=\linewidth]{results/runtime/conventional_beamforming.c.results}
+    \caption{conventional\_beamforming.c}\label{fig:runtime:conv_beam}
+\end{figure}
+\begin{figure}[H]
+    \center
+    \includegraphics[width=\linewidth]{results/runtime/correlation.c.results.png}
+    \caption{correlation.c}\label{fig:runtime:correlation}
+    \includegraphics[width=\linewidth]{results/runtime/covariance.c.results}
+    \caption{covariance.c}\label{fig:runtime:covariance}
+\end{figure}
+\restoregeometry
+
+%\begin{figure}[H]
+    %\begin{minipage}{0.50\textwidth}
+        %\includegraphics[height=\linewidth, angle=-90]{results/nb_stmts/bicg.c.scop.results}
+        %\caption{bicg.c}\label{fig:nb_stmts:bicg}
+    %\end{minipage}\hfill
+    %\begin{minipage}{0.50\textwidth}
+        %\includegraphics[height=\linewidth, angle=-90]{results/nb_stmts/conventional_beamforming.c.scop.results}
+        %\caption{conventional\_beamforming.c}\label{fig:nb_stmts:conv_beam}
+    %\end{minipage}
+    %%\begin[0.32\textwidth]{minipage}
+    %%\end{minipage}\hfill
+%\end{figure}
+%Graph nb stmt aggrégé
+
+Intel Quad Q6600 2.40GHz, 8Mo L2, 4Go DDR2 667Mhz
 
     
 \section{Conclusions}
@@ -1555,8 +1870,8 @@ The next things we needed to do was to find Aggregation Strategies. An Aggregati
 determine the way we plan to rate the similarity and aggregate the statements in a scop : in what
 order, with or without randomness, with or without human help etc...\\
 For now, only one Aggregation Strategy is implemented in \textit{Substrate},
-and it is "Simple Successive Statements Aggregation Algorithm" (SSSAA).
-SSSAA try to aggregate only successive statements, from the first to the last
+and it is "Successive Statements Aggregation Algorithm" (SSAA).
+SSAA try to aggregate only successive statements, from the first to the last
 statement of the scop, and even though it is a relatively simple algorithm, the results we
 are getting by using it are promising.\\
 Even though we've seen that our approach is not always applicable, when it does
@@ -1645,10 +1960,10 @@ what could be done before the end of the internship, and what would conceivable 
         For example, take the following case :
 \begin{lstlisting}[frame=single, language=C, caption={Statements Separation example}, label={lst:stmt_sep_example}]
 for (i = 0; i < size; i++) {
-for (j = 0; j < size; j++) {
-    sum += A[i][j]; //S1
-    A[i][j] = 0.;   //S2
-}
+    for (j = 0; j < size; j++) {
+        sum += A[i][j]; //S1
+        A[i][j] = 0.;   //S2
+    }
 }
 \end{lstlisting}
         In this code, S2 could be fully parallelized if alone but not S1, and there is
