@@ -1733,6 +1733,7 @@ and during their execution.
 \restoregeometry
 
 \subsection{Speedup of Pluto's runtime}
+\label{sec:speedup_pluto}
 
 We know that aggregating statements reduce the complexity of the polyhedral representation
 of a program, because it means less statements and less dependences (because in the case
@@ -1811,13 +1812,34 @@ to do it before the end of the internship.
 
 \subsection{Speedup of the program runtime}
 
-Test
+We wanted to know if what we were doing since the beginning had a real impact on the time they
+take to run. To test that, we've wrote a script compiling and then running the optimized code
+produced by \textit{Pluto} in the section~\ref{sec:speedup_pluto} from our optimized scop and
+from the original scop. We then record the time it took for each of them and then compare
+the runtime of the code produced by \textit{Pluto} from our optimized scop with the code
+optimized by \textit{Pluto} alone, to see if we can get a speedup.\\
+The code were compiled by gcc with the options \verb'-O3 -lm -fopenmp', and were run for
+the benchmark on a Q6600 (Intel Quad, 2.40GHz, 8Mo L2) with 4GB DDR2 667Mhz.
+
+The results we got can be found in the next pages. 
+
+\bigskip
+
+From the 8 programs of our benchmark suit, only conventional\_beamforming.c,
+correlation.c and covariance.c show significant speedup with respectively an average speedup of
+1.5, 1.7 and 1.65. The other programs of the benchmark show a average speedup of 1, meaning
+that they doesn't run any slower of faster than the optimized code produced by \textit{Pluto} alone,
+which indicate that even though we find similarity and aggregate accordingly to it, \textit{Pluto}
+could have done it without us.
+
+But these results are also showing that our optimization pass is really working, even if
+it's on limited cases, and that when it works, the results are really encouraging.
 
 %\newgeometry{
     %bottom=40mm}
 \begin{figure}[H]
     \center
-    \includegraphics[width=\linewidth]{results/runtime/conventional_beamforming.c.results}
+    \includegraphics[width=0.9\linewidth]{results/runtime/conventional_beamforming.c.results}
     \caption{conventional\_beamforming.c}\label{fig:runtime:conv_beam}
 \end{figure}
 \begin{figure}[H]
@@ -1842,8 +1864,6 @@ Test
     %%\end{minipage}\hfill
 %\end{figure}
 %Graph nb stmt aggrégé
-
-Intel Quad Q6600 2.40GHz, 8Mo L2, 4Go DDR2 667Mhz
 
     
 \section{Conclusions}
@@ -1875,9 +1895,9 @@ SSAA try to aggregate only successive statements, from the first to the last
 statement of the scop, and even though it is a relatively simple algorithm, the results we
 are getting by using it are promising.\\
 Even though we've seen that our approach is not always applicable, when it does
-we have noticed good runtime speedups from some benchmark program, and an overall
-speedup of the time taken by \textit{Pluto} to optimize after us in when we were able to
-aggregate some statements.
+we have noticed good runtime speedups, and an overall speedup of the time taken by \textit{Pluto}
+to optimize after us, when we were able to aggregate some statements. It indicates that our idea,
+our optimization pass show good potential and than we should pursue our research on it.
 
     \subsection{What this internship has brought to me}
         I'm happy to say that I have learn a lot of and about new things during this internship :
