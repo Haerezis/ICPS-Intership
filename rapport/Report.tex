@@ -35,7 +35,7 @@
 \usepackage[english]{babel}                                                         % English language/hyphenation
 \usepackage[protrusion=true,expansion=true]{microtype}  
 \usepackage{amsmath,amsfonts,amsthm} % Math packages
-\usepackage[pdftex]{graphicx}   
+\usepackage{graphicx}   
 \usepackage{grffile}
 \usepackage{float}
 \usepackage{url}
@@ -138,16 +138,16 @@ Many computation-intensive programs spend a very large amount of their execution
 time inside nested loops. Thus, loop nest optimization is one of the major approach used
 for program optimisation.
 
-To represent the loop nest, we can use the Polyhedral Model, a powerful mathematical model
-that allows to express loop nest as union of polytopes and loop optimizations as
-transformation of these polytopes.
+To represent the loop nest, we can use the polyhedral model, a powerful mathematical model
+that allows to express loop nest as union of polyhedra and loop optimizations as
+transformation of these polyhedra.
 
-The game is to find the "good" polytope transformations to end up with
-transformed polytopes representing loop nest (which doesn't violate dependences) 
+The game is to find the "good" polyhedron transformations to end up with
+transformed polyhedra representing loop nest (which doesn't violate dependences) 
 that can be parallelized, vectorized, tiled, etc. with better properties than the original
-polytope.
+polyhedron.
 
-The Polyhedral Model is really good with short and simple codes, but struggle with
+The polyhedral model is really good with short and simple codes, but struggle with
 large and complex codes.The reason is twofold. First, polyhedral techniques exhibit
 a very high worst-case complexity which hampers its applicability to large codes.
 Second, contradicting optimization objectives may result in suboptimal global
@@ -172,8 +172,8 @@ that produce the best aggregated set of statement, based on the rate computed.
 
 %{The reasons behind the choice of this internship}
 \section{The reasons behind the choice of this internship}
-The first reason why I've asked and chosen this internship was that I wanted to try and learn
-if I was capable, if I had what it takes to work in research, or if it was more than I could
+The first reason why I've asked and chosen this internship was that I wanted to see
+if I was capable enough, if I had what it takes to work in research, or if it was more than I could
 chew.
 
 The second was that I also wanted to put myself to the test and see if I really 
@@ -183,22 +183,21 @@ a researcher as I was interested in being a college teacher in Computer Science
 
 In other words,
 I was expecting this internship to be a little bit like a trial by fire that would help me
-to take a decision for my professional future.
+take a decision for my professional future.
 
 \bigskip
 
-In addition to these reasons, that were more personal and intimate than practical, there is
-also the more practical reasons :
+In addition to these reasons, which were more intimate and personal than practical, the
+other reasons behind my choice were :
 \begin{itemize}
     \item[] I wanted to learn more about optimization methods, both high and low level methods,
-        so I know more about what can be done when trying to optimize by hand a code.
-    \item[] I was expecting to learn some valuable skills :
+        to know more about what can be done when trying to optimize a code by hand.
+    \item[] I was also expecting to learn some valuable skills :
         \begin{itemize}
-            \item To be able to do the literature review about state of the art of
+            \item To be able to do a literature review about the state of the art techniques of
                 a subject (here : code optimization techniques).
-            \item To become more familiar with the reading, analyze and synthesis of
-                scientific papers.
-            \item To become more familiar with benchmarking, performance analyze and
+            \item To become more familiar with reading, analyze and summarize scientific papers.
+            \item To become more familiar with benchmarking, performance analysis and
                 graphical representation of data.
             \item To become more familiar with the use of external libraries, project
                 management and become more fluent in C and Python.
@@ -220,37 +219,45 @@ Those were all the reasons that motivated my choice.
         \item Code example are either in C or pseudo-code.
     \end{itemize}
 
-\section{Polyhedral Model}
-The polyhedral model is (as explained in \cite{Bas'12}) a mathematical model that allows to represent program
-part as union of polytopes and affine sets. Program parts that can fit the model
-are called \textit{static control parts} or \textit{SCoPs} for short.
-Scops are generally loop-based, and need to have affine loop bounds, conditions and
-array subscripts to fit the polyhedral model.
+\section{polyhedral model}
+The first thing I had to do during this internship was to learn everything about the polyhedral
+model, because it was in the subject to use this model to abstract the program we are trying
+to optimize. I explain in this section what I've learned about the polyhedral model during
+this internship.
+
+\bigskip
+
+The polyhedral model is (as explained in the thesis~\cite{Bas'12}) a mathematical
+model that allows to represent program part as union of polyhedra and affine sets.
+Program parts that can fit the model are called \textit{static control parts} or
+\textit{SCoPs} for short. Scops are generally loop-based, and need to have affine loop bounds,
+and conditions/array subscripts that fit the polyhedral model (they need to be affine).
 
 The polyhedral model consist of three mathematical objects based on unions of relations :
 \begin{itemize}
     \item The \textit{Iteration Domain}, that provide the set of all the iteration scanned
         %parcouru
         by a specific statement, using affine constraints. It's these affine constraints 
-        that can be seen as a $\mathbb{Z}$-polytope.
+        that can be seen as a $\mathbb{Z}$-polyhedron.
     \item The \textit{Scattering Relations} (or \textit{Scheduling Relations},
         or even \textit{Mapping Relations}), that give us the ordering in which
         all the statement instances will be executed.
     \item The \textit{Access Relations} that models read/write accesses made by
-        the different arrays and simple variables.
+        the different arrays and variables or the scop.
 \end{itemize}
 
     \subsection{Iteration Domain}
-        To understand Iteration Domain, it's necessary to first understand what a \textit{statement instance}
-        is. A statement instance is one particular execution of a statement.
-        When a statement is located inside a loop nest, it can be associated to the value
-        of the outer-loop counters (called \textit{iterators}.
+        To understand the \textit{Iteration Domain}, it's necessary to first understand
+        what a \textit{statement instance} is. A statement instance is one particular
+        execution of a statement. When a statement is located inside a loop nest, 
+        it can be associated with the value of the all the outer-loop counters
+        (called \textit{iterators}) of the statement.\\
         The Iteration Domain will be the set of the iterators of all the statement
-        instance.
+        instances.
 
         Because the outer loop bound can be affine or parameterized, it is generally impossible to
         know their actual value at compilation time. Even if we knew the value of the
-        bounds, the number of iterators could be too enormous to count them all into sets.
+        bounds, the number of iterators could be too enormous to count and list them all into sets.
         That's why the sets are expressed as a system of affine constraints.
         These affine constraints define a $\mathbb{Z}$-polyhedron, hence the name of the model.
         The relation used to represent the Iteration Domain is :
@@ -261,7 +268,7 @@ The polyhedral model consist of three mathematical objects based on unions of re
             \geq \vec{0}
             \right\}$
         \end{center}
-        where $\vec{\imath}$ is the $\dim(\vec{\imath})$-dimensional iteration vector and
+        where $\vec{p}$ is the parameter vector, $\vec{\imath_S}$ the $\dim(\vec{\imath_S})$-dimensional iteration vector and
         $D_S \in \mathbb{Z}^{m_{\mathcal{D}_S} \times (\dim(\vec{\imath})+\dim(\vec{p})+1)}$
         is an integer matrix where $m_{\mathcal{D}_S}$ is the number of constraints.
         \\
@@ -308,7 +315,7 @@ S2:             B[i][j] += 42;
         \end{itemize}
 
         In the case of \textit{if-then-else} enclosed statements, the iteration domain
-        for the statement will be an union of disjoint polytope, each representing a part
+        for the statement will be an union of disjoint polyhedron, each representing a part
         of the \textit{if-then-else} condition.
 
     \subsection{Scattering Relations}
@@ -328,8 +335,8 @@ S2:             B[i][j] += 42;
                 executed in parallel in different processor.
         \end{description}
 
-        It is possible to express each ordering relations as separate relation,
-        but it is also possible to aggregating them together : the result would be
+        It is possible to express each ordering relations separately,
+        but it is also possible to aggregate them together : the result would be
         a relation between the iterators set and a set of ordering vector which
         would have some dimensions allocated to time ordering (scheduling) and
         some other to space ordering (allocation).
@@ -342,12 +349,12 @@ S2:             B[i][j] += 42;
             \geq \vec{0}
             \right\}$,
         \end{center}
-        where $\vec{\imath}$ is the $\dim(\vec{\imath})$-dimensional iteration vector
+        where $\vec{p}$ is the parameter vector, $\vec{\imath_S}$ the $\dim(\vec{\imath_S})$-dimensional iteration vector
         and $T_S \in \mathbb{Z}^{m_{\theta_S}\times(\dim(\vec{\imath_S})+\dim(\vec{t_S})+\dim(\vec{p})+1)}$
         is an integer matrix where $m_{\theta_S}$ is the number of constraints.
 
         For example, for Listing~\ref{lst:polyhedral_example}, we have for S1 and S2
-        statement the original scattering of the program :
+        statement the following original scattering :
         \begin{itemize}
             \item[]
                 $\theta_{S1}(N) = \left\{(i) \to \begin{pmatrix}t^{1}_{S1}\\t^{2}_{S1}\\t^{3}_{S1}\end{pmatrix} \in
@@ -395,16 +402,16 @@ S2:             B[i][j] += 42;
                     which can be simplify to $\theta_{S2}(N)\begin{pmatrix}i\\j\end{pmatrix}=\begin{pmatrix}1\\i\\0\\j\\0\end{pmatrix}$.
         \end{itemize}
         The first dimension for S1 is 0 and for S2 is 1 : it is to ensure that S2
-        is always executed after S1.
+        is always executed after S1. This dimension is also an example of \textit{Scheduling} dimension.
         In our example, it doesn't matter because S1 and S2 doesn't have any data dependence
         whatsoever, and they could be run in parallel without problem, but for the sake
         of the example, we've imposed that S1 is executed before S2.
 
     \subsection{Access Relations}
-        The \textit{Access Relations} models the memory access of the different
-        array references in a statement. It map the statement instances to memory locations
-        for every array reference in the statement. Non-array reference can be seen as
-        0-dimensional array.
+        The \textit{Access Relations} model the different memory accesses made 
+        in a statement. It maps the statement instances to memory locations
+        for every array reference of a statement. Non-array reference like simple variable
+        can be seen as 0-dimensional array.
 
         The access relation can be written in the general form :
         \begin{center}
@@ -418,15 +425,16 @@ S2:             B[i][j] += 42;
         \end{center}
         where 
         \begin{itemize}
+            \item where $\vec{p}$ is the parameter vector.
             \item $r$ is the number of the reference in the statement (every references are
-                numbered, from left to right generally),
-            \item $\vec{\imath}$ is the $\dim(\vec{\imath})$-dimensional iteration vector
+                numbered, from left to right generally).
+            \item $\vec{\imath_S}$ is the $\dim(\vec{\imath_S})$-dimensional iteration vector
             \item $T_S \in \mathbb{Z}^{m_{\theta_S}\times(\dim(\vec{\imath_S})+\dim(\vec{t_S})+\dim(\vec{p})+1)}$
                 is an integer matrix where $m_{\theta_S}$ is the number of constraints.
         \end{itemize}
 
         The read or write nature of the memory access is not expressed in this form,
-        and need to be given (for example, to compute data dependences).
+        and need to be given alongside the model (for example, to compute data dependences).
 
         %TODO Expliquer les outputs dimensions (si il y en as dans le modèle théorique).
 
@@ -451,8 +459,8 @@ S2:             B[i][j] += 42;
                 \left\{
                 \begin{pmatrix}i\end{pmatrix} \to \left(a_{S2,1}\right) \in \mathbb{Z}\times\mathbb{Z}
                     \middle|
-                    \left[\begin{array}{c:c:c:c:c}-1 & 1 & 0 & 0 & 0 \end{array}\right]
-                    \left[\begin{array}{c:c:c:c:c}-1 & 0 & 1 & 0 & 0 \end{array}\right]
+                    \left[\begin{array}{c:c:c:c:c}-1 & 1 & 0 & 0 & 0 \\
+                                                  -1 & 0 & 1 & 0 & 0 \end{array}\right]
                     \left(\begin{array}{c}a_{S2,1}\\\hdashline i\\\hdashline j\\\hdashline N\\\hdashline 1\end{array}\right)
                     = \vec{0}
                 \right\}
@@ -464,13 +472,13 @@ S2:             B[i][j] += 42;
 
     \subsection{Dependence Relations}
     \label{sec:dependence_relations}
-        Data Dependences are necessary when, for example, we have to identify if a statement
+        Data Dependences are necessarily considered, when, for example, we have to identify if a statement
         can be parallelized or vectorized (simdized). They are also needed when we try to
-        transform the scattering of a statement : doing that could violate some dependences,
-        and the Dependence Relations (with Violation Relations) can be used to detect such
+        transform the scattering of a statement : doing that could violate dependences between
+        some statements, and the Dependence Relations (with Violation Relations) can be used to detect such
         violations.
 
-        Fortunately, Data Dependence can be easily represented in the Polyhedral Model as
+        Fortunately, Data Dependence can be easily represented in the polyhedral model as
         \textbf{Dependence Relation}.
 
         A Dependence Relation represent the fact that some ordered statement iterations
@@ -521,31 +529,32 @@ S2:             B[i][j] += 42;
         }
         \end{center}
         If, for the statement $S$ and $T$ and with the depth $d$, this relation is not empty
-        then there is a dependence between $S$ and $T$.
+        (meaning that with all these constraints, there is still at least a point in the set
+        this relation represents) then there is a dependence between $S$ and $T$.
         
-        This matrix seems complicated but we are just piling up more and more constraints
+        This matrix seems complicated at first but we are just piling up more and more constraints
         on a linear system. Theses constraints correspond to three sub-relations :
         \begin{itemize}
             \item First, there is the \textbf{Existence Condition} of the instances.
-                It corresponds to the line 1-2 of the matrix.
+                It corresponds to the lines 1-2 of the matrix.
 
-                The \textit{Existence Conition} determine, like in the \textit{Domain Relation},
+                The \textit{Existence Conition} determines, like in the \textit{Domain Relation},
                 the set of possible iterations for the 2 statements (a dependence couldn't
                 possibly exist between out-of-\textit{Domain} iterations).
 
                 It's just the \textit{Domain Matrix} of the 2 statements split vertically
                 in 3 and placed correctly in the \textit{Dependence Matrix}.
             \item Second, there is the \textbf{Conflit Condition} of the memory location.
-                It corresponds to the line 3-4-5 of the matrix.
+                It corresponds to the lines 3-4-5 of the matrix.
 
                 The \textit{Conflict Condition} determines the equality of the 2 different 
                 memory accesses causing the dependence : if there is a dependence,
-                it means that for some iterations, there is 2 memory accesses that 
-                access the same memory location, meaning that for some iterations,
+                it means that for some iterations, these 2 memory accesses
+                access the same memory location, so it means that for some iterations,
                 the 2 memory accesses are equal.
 
-                So we add to the system the \textit{Access Matrix} of the memory accesses of the 2
-                statements causing the dependence and then a series a constraints
+                To represent that, we add to the system the \textit{Access Matrix} of the 2 memory accesses
+                causing the dependence and then a series a constraints
                 that bind the two access into equality (Identity matrix for the first
                 \textit{Access Matrix} , and a negative Identity matrix for the second).
             \item Third, there is the \textbf{Causality Condition} of the instances.
@@ -556,20 +565,20 @@ S2:             B[i][j] += 42;
                 involved in the dependence.
 
                 We define what is called the \textit{dependence depth} $d$. There is
-                as many possible $d$ as there is of common loops between the 2 statements.
+                as many possible $d$ as there is of loop in common between the statements $S$ and $T$.
                 If for a value of $d$, the linear system represented by the \textit{Dependence Matrix}
-                has a solution, it means that for the loop of depth $d$ carry the dependence.
+                has a solution, it means that the loop of depth $d$ carry the dependence.
                 If multiple value of $d$ produce solution to the linear system (so there
                 is multiple \textit{Dependence Relation} for the same statements and
                 memory location/accesses), it means that multiple loops carry the dependence.
 
                 To add the notion of \textit{Causality} we add to the system a series of
                 constraint binding the corresponding \textit{source} and \textit{target}
-                iterators of the loops having a depth lesser than $d$
-                (with a Identity and negative Identity).
+                iterators of the loops having a depth lighter than $d$
+                (with a Identity and negative Identity matrix).
                 For the \textit{source} and \textit{target} iterator of the loop having
                 the depth $d$, instead of an equality, we bind them with inequality :
-                the \textit{source} iterator lesser or equal ($\leq$) to the \textit{target} iterator.
+                the \textit{source} iterator lighter than or equal to ($\leq$) the \textit{target} iterator.
 
                 It's also possible to force a strict inequality ($<$) by setting the cell
                 in the last line and column of the matrix to $-1$, instead of $0$.
@@ -636,7 +645,7 @@ $
 
     \bigskip
 
-    That's really one of the most powerful side of the Polyhedral Model, its ability to
+    That's really one of the most powerful side of the polyhedral model, its ability to
     compute the different dependences by building linear systems : if there is solution,
     there is dependence, and if not, there is not dependence. It's powerful because
     the techniques to build and solve linear system are known and mastered, so the basis
@@ -654,19 +663,21 @@ $
         and manipulate the different data structures the specification define.
         The file format as well as the library has been designed to accept extensions.
 
-        Substrate, the tool performing our analyze and optimization pass uses OpenScop
-        as input and output format.
+        Substrate, the tool I have written during this internship to perform our analysis
+        and optimization pass uses \textit{osl} OpenScop as input and output format.
 
 \section{Statement Profiling}
+In this section we will present and explain the different properties a statement can exhibit
+that can characterize similarity. We will then present and discuss the model we chose to model
+those properties.\\
+This list is composed of the properties we had time to study, select and implement,
+and it is of course not exhaustive : other profile type need to be considered in the future.
 \label{sec:statement_profiling}
     \subsection{Data Reuse/Locality}
-        In this section, we will explain the basics behind data reuse/locality and
-        then talk about the different metrics and methods found in the literature used to evaluate
-        and quantifying data reuse and why they where selected or not for the statements profile.
-
-        %XXX
-        %Le problème étant que dans notre cas, seul la quantification de reuse nous intéresse
-        %la locality étant lié au scattering, il nous intéresse moins.
+        In this section, we will explain the basics behind data reuse/locality. We will then
+        talk about the different metrics and methods found in the literature used to evaluate
+        and quantifying data reuse, why they where selected/kept in mind or not for the \textit{Reuse Profile}.
+        And finally we will discuss the final model we have chosen for the \textit{Reuse Profile}.
 
         \subsubsection{Difference between Reuse and Locality}
             It's important to differentiate \textit{reuse} from \textit{locality}.
@@ -676,7 +687,7 @@ $
             
             When there is reuse, it's possible (but not guaranteed) to have
             \textit{locality}. We say that there is \textit{locality} when the
-            reused data remains in memory hierarchy level targeted 
+            reused data remains in the memory hierarchy level targeted 
             (eg : the CPU cache in our case) between 2 reuses.
             For that to be the case, the amount of other data accessed between the
             2 reuses must not exceed the cache size, or else the reused data will be
@@ -685,8 +696,8 @@ $
 
 
             Thus, we can say that the \textit{reuse} is linked to the way indexing
-            functions (for array references) are written, whereas \textit{locality} is
-            inherent to the iterations order/the way the loops are written.
+            functions/subscripts (for array references) are written, whereas \textit{locality} is
+            inherent to the iterations order.
 
         \subsubsection{Types of Reuse}
             
@@ -748,7 +759,7 @@ for(i=0; i<N ; i++)
         \label{sec:wolf_91}
             The notion of Reuse Vector Space come from Wolf et. al.\cite{Wolf'91} and describe
             the vector subspace of the Iteration vector space where the reuse of
-            a reference can be taken advantage to induce locality.
+            a reference can be effectively induce locality.
             There is as many reuse vector space as there is type of reuse.
 
 \begin{lstlisting}[frame=single, language=C, caption=Simple example, label={lst:simple_example}]
@@ -772,7 +783,7 @@ for(i=0; i<N ; i++)
                 Let $n$ be the depth of a loop nest, and $d$ be the dimensionality of
                 an array $A$. Two references $A[\vec{a}(\vec{\imath})]$ and
                 $B[\vec{b}(\vec{\imath})]$, where $\vec{a}$ and $\vec{b}$ are indexing
-                functions $Z^{n} \rightarrow Z^{n}$, are called \textbf{uniformly generated} if :
+                functions $Z^{n} \rightarrow Z^{d}$, are called \textbf{uniformly generated} if :
                 \begin{center}
                     $\vec{a}(\vec{\imath}) = H\vec{\imath}+\vec{c}_a$ and $\vec{b}(\vec{\imath}) = H\vec{\imath}+\vec{c}_b$
                 \end{center}
@@ -781,7 +792,7 @@ for(i=0; i<N ; i++)
             
             We can partition references into equivalence class, called \textit{uniformly generated sets},
             when the references operate on the same array, and have the same $H$.
-            We can see $H$ as a part of one of the access function (in the Polyhedral Model representation) of this statement :
+            We can see $H$ as a part of one of the access function (in the polyhedral model representation) of this statement :
             it's the access function matrix without the part handling the constant vector.
 
             For example in Listing \ref{lst:reuse_example}, $B[i]$,$B[i+1]$ and $B[i+2]$ can be each written as
@@ -847,7 +858,7 @@ for(i=0; i<N ; i++)
         \subsubsection{The Simple Algorithm}
             The \textit{Simple Algorithm}~\cite{Kennedy94maximizingloop} is a
             optimization algorithm that improve data locality via Loop Fusion.
-            The idea is to fusion vertices of a directed graph when these vertices
+            The idea is to fusion vertices of a directed graph when those vertices
             are connected by non-fusion-preventing arcs.
             In this graph, the vertices represent the different loop nests of a program part,
             and the arcs represent data dependences between statements of different loop nests.
@@ -898,7 +909,7 @@ for(i=0; i<N ; i++)
         
         \subsubsection{LoopCost Algorithms}
             The LoopCost algorithm~\cite{McKinley:1996:IDL:233561.233564} provide
-            us with a cost model that allow to guide some loop transformation like
+            us with a cost model that allow to help us chose the right loop transformation like
             loop permutation, loop reversal, loop fusion, loop distribution,
             by comparing the cost with and without the transformation.
             
@@ -981,18 +992,18 @@ for(i=0; i<N ; i++)
 %            TODO
 
         \subsubsection{The chosen model for Reuse Profile}
-            In the end, characterize Data Reuse for the Reuse Profile, we decided to
-            sort the different accesses of a statement and group recursively into classes.
+            In the end, to characterize Data Reuse for the Reuse Profile, we decided to
+            group recursively into classes the different accesses of a statement.
 
             For that, we reuse the notions of Uniformly Generated Sets used in the paper~\cite{Wolf'91}
-            explained in the section~\ref{sec:wolf_91}, but we propose an addition to it :
+            and explained in the section~\ref{sec:wolf_91}, but we propose an addition to it :
             a reference (as expressed in Definition~\ref{sec:uniformly_generated}) $A$ is 
-            grouped intro the same class with an reference $B$ to be in the same class if :
+            grouped into the same class with a reference $B$ if:
             \begin{itemize}
-                \item They reference the same name variable/array.
+                \item They reference the same variable/array.
                 \item They have the same $H$ matrix.
                 \item Let $\vec{c}=\vec{c}_b - \vec{c}_a$, $\vec{c}$ need to have a $0$
-                    for all elements of the vector \textbf{except one}, the one corresponding
+                    for all its elements \textbf{except one}, the one corresponding
                     to the dimension carrying the reuse : if we're in row-major, that's the
                     last element of the vector, and if we're in column-major, that's the first
                     element. Basically, this condition just says that the two accesses need
@@ -1007,16 +1018,17 @@ for(i=0; i<N ; i++)
 for(i=0; i<N ; i++)
     for(j=0; j<N ; j++)
     {
-        A[i][j] = (A[i][j-1] + A[i][j+1] + A[i-1][j] + A[i+1][j]) + A[2*i][j] + B[i][j]) / 6.0; //S1
+        A[i][j] = (A[i][j-1] + A[i][j+1] + A[i-1][j]
+        + A[i+1][j]) + A[2*i][j] + B[i][j]) / 6.0; //S1
     }
 \end{lstlisting}
 
         Here, for the Reuse Profile of S1, we would :
         \begin{itemize}
-            \item* First group the accesses by reference name, so we would have the reference
+            \item[] First group the accesses by reference name, so we would have the reference
                 class for the array $A$ : $\{A[i][j],A[i][j-1],A[i][j+1],A[i-1][j],A[i+1][j],A[2*i][j]\}$
                 and a class for the array $B$ : $\{B[i][j]\}$.
-            \item* Then we would take each reference class and group their accesses in class
+            \item[] Then we would take each reference class and group their accesses in class
                 according to their Uniformly Generated Set.\\
                 For the class $A$, we would have the following classes :
                     \begin{itemize}
@@ -1024,8 +1036,8 @@ for(i=0; i<N ; i++)
                         \item class $(2,1)$ : $\{A[2*i][j]\}$.
                     \end{itemize}
                 For the class $B$, we would have the following class : class $(1,1)$ : $\{B[i][j]\}$.
-            \item* Then we would take each Uniformly Generated Set classes and group their
-                access according to the resulting $\vec{c}$ vector :
+            \item[] Then we would take each Uniformly Generated Set classes and group their
+                accesses according to the resulting $\vec{c}$ vector :
                 For the class $(1,1)$ of $A$, we would get the following reuse classes :
                 \begin{itemize}
                     \item $\{A[i][j],A[i][j-1],A[i][j+1]\}$.
@@ -1037,28 +1049,28 @@ for(i=0; i<N ; i++)
         \end{itemize}
         
         Because an image worth a thousand words, the Reuse Profile of S1 would look like this :
+        \textbf{!! TODO : IMAGE REPRESENTANT LES CLASSES !! }
         %TODO graphviz
 
 
     \subsection{Parallelism}
         We say that a statement can be parallelized for a certain loop when it is legal to
-        execute different \textit{instances} of the statement (so with different iterators)
+        execute some different \textit{instances} of the statement (so with different iterators)
         on multiple cores at the same time, without violating any dependences. The
         goal (not always possible) of executing multiple instances at the same time is to
         speed up the overall execution of the program.
 
-        Unlike \textit{Data Reuse} where we had to find a good way to detect and quantify it
-        because there could be more or less \textit{reuse} in a statement, the \textit{Parallelism}
-        of a statement doesn't need to be "quantify" : a statement can be either parallelized
-        for a certain loop or it cannot : no more, no less.
+        Unlike \textit{Data Reuse} where we had to find a good way to detect and characterize it,
+        the \textit{Parallelism} of a statement doesn't need to be "characterize" :
+        a statement can be either parallelized for a certain loop or it cannot : no more, no less.
 
         So in the end, the \textit{Parallelism Profile} of a statement is just the list
-        of loop than can be parallelized safely. And to determine which loop can be parallelized
-        safely, we just need to analyze the \glspl{self-dependence} of the statement.
-        We only analyze \gls{self-dependence} because we analyze the statement alone, 
-        like if there is no other statement in the scop, so the only possible dependences
-        are the one from the statement to itself.
-        Dependences in the Polyhedral Model are explained in the Section~\ref{sec:dependence_relations}.
+        of loop than can be parallelized safely for this statement.
+        And to determine which loop can be parallelized safely, we just need to analyze
+        the \glspl{self-dependence} of the statement. We only analyze \gls{self-dependence}
+        because we analyze the statement alone, without any of the other statement of
+        the scop, so the only possible dependences are the one from the statement to itself.
+        Dependences in the polyhedral model are explained in the Section~\ref{sec:dependence_relations}.
        
         \bigskip
 
@@ -1074,7 +1086,7 @@ for(i=0; i<N ; i++)
                 dependences are always different, which is not out case here.
         \end{itemize}
         
-        So once we've computed all the dependence possible (for all the depth $d$ possible),
+        So once we've computed all the dependences possible (for all the depth $d$ possible),
         we need, for all the iterators/loops of the statement, to check if one of the dependences
         is loop-carried :
         \begin{itemize}
@@ -1097,8 +1109,8 @@ for(i=0; i<N ; i++)
             \item A \underline{strict} inequality between the $l^{\text{th}}$ iterator of
                 the \textit{source} and \textit{target} statements.
         \end{itemize}
-        These additional constraints have the following meaning : if dependences
-        still exists between \textit{instances} of the \textit{source} and \textit{target}
+        These additional constraints have the following meaning : if a dependence
+        still exists between instances of the \textit{source} and \textit{target}
         statement in the $l^\text{th}$ iteration dimension
         \begin{itemize}
             \item even when all of their \textit{other} iterators are equal (the "equal" constraints),
@@ -1113,37 +1125,37 @@ for(i=0; i<N ; i++)
         
     \subsection{Vectorization}
         \subsubsection{Principles}
-        Vectorization is a special case of Parallelization where we try unroll a little
-        the loop and transform scalar operations, that compute only one single pair of
+        Vectorization is a special case of Parallelization where we try to unroll a little
+        a loop and transform the scalar operations, that compute only one single pair of
         operand, to vector operations (SIMD operation : Single Instruction, Multiple Data),
         that compute multiple pair of operand at a time, so that the loop can run a little
         faster and more efficiently.
 
         One of the condition for a statement to be vectorized is that the memory accesses
         that appear in it should have the same alignment in memory : the address of all the
-        accesses of modulo the vector register size should be the same for all the accesses
+        accesses modulo the size of vector registers should be the same for all the accesses
         of the statement.
         But techniques exist to transform non-aligned accesses to aligned accesses, like
         in this paper~\cite{Eichenberger:2004:VSA:996893.996853}, so we chose to ignore this
         condition, by considering that compilers are now capable of handling this problem.
 
         Because Vectorization is a special case of Parallelization, the way to detect it
-        is a lot like the way to detect parallelization : it involve the analyze of
+        is a lot like the way to detect parallelization : it involve the analysis of
         the \glspl{self-dependence} of a statement. But unlike Parallelization, here we are
         only interested in a certain number of loops. Those loops are the ones whose iterators
         are used either in :
         \begin{itemize}
-            \item the last output dimension of the accesses of the statements when in row-major,
-            \item the first output dimension of the accesses of the statements when in column-major.
+            \item the last dimension of the accesses of the statements when in row-major,
+            \item the first dimension of the accesses of the statements when in column-major.
         \end{itemize}
         These loops also need to have a unit stride (increment of 1).
 
         We will call the loops validating these 2 conditions \textbf{candidate loops}.
         The other loops, the ones that don't validate the 2 conditions, are ignored for
-        the rest of the analyze (even though they could have been parallel). This is
+        the rest of the analysis (even though they could have been parallel). This is
         because when we vectorize a statement, the accesses of consecutive instances have
         to access consecutive memory location which can only be the case when the iterator
-        of the loop is used in the last/first output dimension and when it have a unit stride.
+        of the loop is used in the dimension were data reuse can occur and when it have a unit stride.
         To have a real unit stride, these loop also need to be the innermost loop of the loop nest
         surrounding the statement.
         
@@ -1199,8 +1211,8 @@ for(i=1 ; i<N ; i++) {
     profile. But there is a Write-after-Read dependence between S1 and S2 : this dependence
     make the vectorization of S1 illegal.
 
-    So when using the \textit{Vectorization Profile} during an optimization, we need to keep
-    checking for inter-statement dependences when trying to vectorize statements.
+    So if the \textit{Vectorization Profile} is used during an optimization vectorizing
+    some statement, we still need to keep checking for inter-statement dependences.
 
     %XXX if the size of the vector register is smaller than minimum of all the access
     %A[i-offset], then we can still vectorize, but it's a borderline case.
@@ -1217,7 +1229,7 @@ for(i=1 ; i<N ; i++) {
         parallelization and locality optimization.
 
         This algorithm is implemented in a program called \textbf{Pluto}~\cite{pluto} (which also
-        use the Polyhedral Model) and its results are really impressive.
+        use the polyhedral model) and its results are really impressive.
 
         Because of that, we had the idea to use the Tiling Hyperplane computed by \textit{Pluto}
         as a property of a statement : after all, the Tiling Hyperplane computed is the way
@@ -1240,9 +1252,10 @@ for(i=1 ; i<N ; i++) {
 
 \section{SuBStrAte : Aggregating "Near Behaving" Statements Using Profiling}
     Substrate is the result and the implementation of the work and the research I've done
-    about how to profile the different "attribute" of a statement.\\
+    on how to profile the different properties of a statement and how to aggregate similar
+    statements.\\
     Substrate is a program that will profile each statement of a \textit{scop} for
-    each each of its "attribute" with the analyze pass.
+    each each of its properties with the analysis pass.
 
     It will then try to aggregate
     statements into what I call \textbf{meta-statement}. Meta-statements are simply
@@ -1251,7 +1264,7 @@ for(i=1 ; i<N ; i++) {
     all the memory accesses of all the statements are the memory accesses of the \textit{meta-statement}.
 
     To aggregate statements into meta-statements, we need to rate the similarity between two
-    statements (or meta-statements) : putting a numerical value to the similarity.
+    statements (or meta-statements) : putting a numerical value to their similarity.
     If the similarity is high, the rate is high, and if the rate is high, we need to
     aggregate the statements.
 
@@ -1259,24 +1272,24 @@ for(i=1 ; i<N ; i++) {
     2 profile into a numerical value.
 
     \subsection{Statement Profiling}
-    The analyze pass is the direct implementation of all the research done in the section~\ref{sec:statement_profiling}:
+    The analysis pass is the direct implementation of \textit{Profile Type} model explained in the section~\ref{sec:statement_profiling}:
     \begin{itemize}
-        \item The data reuse profile is built by grouping the
+        \item The Reuse Profile is built by grouping the
             different memory accesses into array reference group, then uniformly generated set group,
             then group with the same reuse direction. The harder part here wasn't the
             implementation but the research part.
 
-        \item The Parallelism profile is built by listing all the loop index that could be
+        \item The Parallelism Profile is built by listing all the loop index that could be
             parallelized for the statement. It is done by using the loop carried algorithm
             of the polyhedral model : if for a loop index, not a single one dependence is
             loop carried by it, then it can be parallelized safely.
             The catch in our case was that the implementation of this algorithm was in
             \textbf{CAnDL}, another library/program of the \textit{periscop} suite (a suite of
             library/program using the OpenScop format). \textit{CAnDL} can compute
-            a lot of things regarding the \textit{dependence} in the \textit{Polyhedral Model},
+            a lot of things regarding the \textit{dependence} in the \textit{polyhedral model},
             but its implementation of the loop carried algorithm wasn't working due to old
-            changes in \textit{OpenScop} that were never correctly/fully implemented for this
-            function/algorithm.
+            changes in \textit{OpenScop} specification that were never correctly/fully implemented
+            for this function/algorithm.
             
             So I had to fix the implementation without breaking anything.
             Some parts of the code weren't making any sens, slowing me down because I had
@@ -1286,7 +1299,7 @@ for(i=1 ; i<N ; i++) {
             In the end, the function is now working, and as a side effect of the time I've taken
             to fix it, I've added to \textit{CAnDL} a function that compute if a dependence
             is loop independent or not.
-        \item The Vectorization profile building algorithm
+        \item The Vectorization Profile building algorithm
             , like I explained in the section~\ref{sec:statement_profiling}, is a lot like
             the Parallelism profile building algorithm, but with some additional checks.
             In the end, the Vectorization profile is simply the list of loop index for which
@@ -1294,10 +1307,10 @@ for(i=1 ; i<N ; i++) {
 
             And because the fix of the loop carried function of \textit{CAnDL} was done during
             the implementation of the Parallelism profile, the implementation of the
-            Vectorization profile took a less time.
-        \item The Tiling Hyperplane profile is not done by \textit{Substrate} but by
+            Vectorization profile took less time than planned.
+        \item The Tiling Hyperplane Profile is not done by \textit{Substrate} but by
             \textbf{Pluto}~\cite{pluto} : \textit{Substrate} merely use the results of
-            \textit{Pluto}'s analyze to get the direction vector of the best Tiling Hyperplane
+            \textit{Pluto}'s analysis to get the direction vector of the best Tiling Hyperplane
             \textit{Pluto} could find.
 
             But adding \textit{Pluto} to the project proved to be more difficult than expect.
@@ -1307,7 +1320,7 @@ for(i=1 ; i<N ; i++) {
             as the building system, and \textit{cmake} proved to be difficult to deal with in these
             sort of case.
 
-            In the end, I gave in because I was losing to much time, and I let \textit{Pluto} builds
+            In the end, I gave in because I was losing too much time, and I let \textit{Pluto} builds
             its own dependences, even if it meant a lot of useless compilations.
     \end{itemize}
     
@@ -1315,9 +1328,9 @@ for(i=1 ; i<N ; i++) {
     To aggregate 2 statements or meta-statements, they need to be similar enough. We characterize
     this similarity, we propose the following approach :
     \begin{itemize}
-        \item We rate the similarity between 0 and 1 for each of the 2 statements' profile types
-            (the algorithm are described later).
-        \item We use these rate to compute a weighted average.
+        \item We rate the similarity between 0.0 and 1.0 for each of the 2 statements' profile types
+            (the rating algorithms are described later).
+        \item We use those rate to compute a weighted average.
         \item We compare the result of the weighted average to the minimal rate necessary
             to aggregate and if it is greater or equal to it, we aggregate the statements.
     \end{itemize}
@@ -1331,7 +1344,7 @@ for(i=1 ; i<N ; i++) {
     any concrete idea to automatically weight the different profile types, so I decide
     to simply give the manual control over it.
         \subsubsection{Data Reuse}
-            The Data Reuse Profile is built as the following : for all memory accesses of
+            Just a quick reminder, the Reuse Profile is built as the following : for all memory accesses of
             a statement, we first group them by reference, then by Uniformly Generated Set,
             then by reuse direction. The Reuse Profile Rating Algorithm simply count
             the number of accesses of a statement that would belong to the same reuse
@@ -1347,7 +1360,6 @@ for(i=1 ; i<N ; i++) {
             the 2 statements.
 
             For example :
-            %TODO graphviz
 \begin{lstlisting}[frame=single, language=C, caption={Reuse profile rating example}, label={lst:rp_example}]
 for(i=0 ; i<N ; i++)
     for(j=0 ; j<N ; j++)
@@ -1356,6 +1368,8 @@ for(i=0 ; i<N ; i++)
         C[i][j] = A[i][j+2];                                //S2
     }
 \end{lstlisting}
+        \textbf{!! TODO : IMAGE REPRESENTANT LE PROFILE !!}
+            %TODO graphviz
         In this example, S1 would have the following Reuse Profile :
         \begin{center}$
             \{
@@ -1400,12 +1414,12 @@ for(i=0 ; i<N ; i++)
         a "relatively" high rate : this is because S1 has the lot of reuse for a particular
         direction group, and S2 has an access that match that group.
 
-        With a rate of $0.43$, it means that $43\%$ of the 2 statements accesses are
-        accessing the same memory area, with the same direction. Which means that if the
+        With a rate of $0.43$, it means that $43\%$ of the memory accesses made by the 2 statements accesses
+        read/write the same memory area, with the same direction. Which means that if the
         CPU cache is big enough, $43\%$ of the memory accesses lead to \textbf{cache hits}.
             
         \subsubsection{Parallelism}
-            Because the parallelism profile of a statement is simply the list of loop
+            Because the Parallelism Profile of a statement is simply the list of loop
             which could be legally parallelized for the statement, we chose to count the
             loop in common that could be parallelized for both statements, and then
             divide that by the total number of loop that could be parallelized for either one
@@ -1459,8 +1473,8 @@ for(i=0 ; i<N ; i++)
             respectively the first and second rated statement.
 
             We are aware that this rating algorithm doesn't allow to precise control using the
-            Tiling Hyperplane Profile, because of the "All or Nothing" approach of this
-            rating algorithm, but this profile type was the last implemented, and its rating
+            Tiling Hyperplane Profile, because of the "All or Nothing" approach,
+            but this profile type was the last implemented, and its rating
             algorithm hasn't mature enough yet.
         %\subsubsection{Register Pressure}
 
@@ -1643,9 +1657,9 @@ shared by them.
 
 All of this to explain why Listing~\ref{lst:original_conventional_beamforming} became one
 of the program of our benchmark suit. But we needed more program, and those program need to
-fit the Polyhedral Model, so decided to use the ones provided by the \textbf{PolyBench},
+fit the polyhedral model, so decided to use the ones provided by the \textbf{PolyBench},
 the Polyhedral Benchmark suite, which contains a lot of different code, all of them fitting
-the Polyhedral Model. It was also the occasion to try and see how many program of the \textit{PolyBench}
+the polyhedral model. It was also the occasion to try and see how many program of the \textit{PolyBench}
 was affected by \textit{Substrate} : if it was even possible to aggregate some of their statements.
 
 What we found was that only 7 programs out of the 30 of the \textit{PolyBench} are eligible
@@ -1876,7 +1890,7 @@ compilation frameworks.
 We've started with the idea that similar or \textit{near behaving} statements should be
 aggregated (considered as one instead of two). So we had to come up with a way to characterize
 the "similarity" between two statements. For that purpose, we've proposed a model where
-each statement is associated with a list of profile built during the analyze pass.
+each statement is associated with a list of profile built during the analysis pass.
 Each profile correspond to a different property a statement can have like \textit{Data Reuse},
 \textit{Parallelism} etc...\\
 These profiles are a way to quantify or at least measure those properties, and this quantification
@@ -1901,8 +1915,8 @@ our optimization pass show good potential and than we should pursue our research
 
     \subsection{What this internship has brought to me}
         I'm happy to say that I have learn a lot of and about new things during this internship :
-        the Polyhedral Model, Data Reuse and Locality, Parallelism and Vectorization detection
-        in the Polyhedral Model, Tiling Hyperplane, and some other.\\
+        the polyhedral model, Data Reuse and Locality, Parallelism and Vectorization detection
+        in the polyhedral model, Tiling Hyperplane, and some other.\\
         To do that, I had to to read, understand and summarize scientific papers which made
         me a little bit used to it.
         One of my goal was to learn and discover new things about compilation and optimization,
@@ -1929,8 +1943,8 @@ our optimization pass show good potential and than we should pursue our research
         me to practice my English, to speak and understand people speaking with different accent.
         And of course I also had to practice my writing with this report.
         I am now more confident about my skills and I really less afraid to speak in English
-        anymore : I know more about my strengths and weaknesses in English, and it doesn't
-        keep me from trying anymore.
+        anymore : I know more about my strengths and weaknesses in English, and I'm not that
+        afraid anymore to speak in English.
 
 
 \section{Future Works}
