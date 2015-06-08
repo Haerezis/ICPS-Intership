@@ -112,8 +112,10 @@ Computing) of the ICube laboratory at the university of Strasbourg, and the CAMU
 (Compilation for MultiCore Architectures) at Inria, the French Institute for Research
 in Computer Science.
 
+\bigskip
+
 ICube is a laboratory created in 2013 and placed under the co-supervision of the Univertisy of
-Strasbourg, the CNRS, the ENGEES and INSA of Strasbourg.
+Strasbourg, the CNRS, the ENGEES and the INSA of Strasbourg.
 ICube resulted from the consolidation of four former laboratories, namely LSIIT, InESS, IMFS and IPB-LINC,
 and aim at bringing together researchers in the fields of engineering science, computer science,
 and medical science with imaging as unifying theme.
@@ -124,6 +126,8 @@ Imaging, Robotics, Remote Sensing and Biomedical Department (D-IRTS), the
 Solid-State Electronics, Systems and Photonics Department (D-ESSP) and the 
 Department of Mechanics (D-M).
 
+\bigskip
+
 ICPS (Informatique et Calcul Parallèle et Scientifique)
 is one the 5 research team of the Computer Science Research Department of ICube and is
 under the supervision of Philippe Clauss.
@@ -133,7 +137,7 @@ technologies in the field of high performance computing with an area of expertis
 in the parallelization and optimization of programs.
 
 ICPS hosts as a subset of the team, the INRIA team-project CAMUS.
-The ICPS/CAMUS group focuses at providing developers with theoretical and software
+The ICPS/CAMUS group focuses on providing developers with theoretical and software
 tools to develop efficient applications for parallel architectures without sacrificing
 productivity.
 
@@ -164,12 +168,12 @@ To represent the loop nest, we can use the polyhedral model, a powerful mathemat
 that allows to express loop nest as union of polyhedra and loop optimizations as
 transformation of these polyhedra.
 
-The game is to find the "good" polyhedron transformations to end up with
-transformed polyhedra representing loop nest (which doesn't violate dependences) 
+The goal is to find the "good" polyhedron transformations to end up with
+transformed polyhedra representing loop nest (which doesn't violate dependencies) 
 that can be parallelized, vectorized, tiled, etc. with better properties than the original
 polyhedron.
 
-The polyhedral model is really good with short and simple codes, but struggle with
+The polyhedral model is really good with short and simple codes, but struggles with
 large and complex codes.The reason is twofold. First, polyhedral techniques exhibit
 a very high worst-case complexity which hampers its applicability to large codes.
 Second, contradicting optimization objectives may result in suboptimal global
@@ -181,16 +185,16 @@ high-level optimizations are used on the source code, a first pass is applied (o
 aggregating "near behaving" statements together using their profile.
 By doing that, we hope to ease the work of the high-level optimizer by "reducing" the size
 of large and complex code, and prevent it from separating statements that should
-not be separated (for example if they have a lot of data reuse in common).
+not be separated (for example if they share a lot of data reuse).
 
 "Near behaving" statements describe statements that have similar properties,
 like data reuse/locality, parallelism, vectorization etc. that constitute their profile.
 
 To achieve that, we first need to learn about the different properties. Then in a second
-time, we need to found a way to measure/quantify them statement-wise. Then, in a third
-time we need to find a way to compute, to \textit{rate}, the similarity of the different
+time, we need to find a way to measure/quantify them statement-wise. Then, in a third
+time we need to find a way to compute, to \textit{"rate"}, the similarity of the different
 properties between two statement. Then in the end, we will try to find smart algorithms
-that produce the best aggregated set of statement, based on the rate computed.
+that produce the best aggregated set of statements, based on the rate computed.
 
 %{The reasons behind the choice of this internship}
 \section{The reasons behind the choice of this internship}
@@ -218,7 +222,7 @@ other reasons behind my choice were :
         \begin{itemize}
             \item To be able to do a literature review about the state of the art techniques of
                 a subject (here : code optimization techniques).
-            \item To become more familiar with reading, analyze and summarize scientific papers.
+            \item To become more familiar with reading, analyzing and summarizing scientific papers.
             \item To become more familiar with benchmarking, performance analysis and
                 graphical representation of data.
             \item To become more familiar with the use of external libraries, project
@@ -243,14 +247,14 @@ Those were all the reasons that motivated my choice.
 
 \section{polyhedral model}
 The first thing I had to do during this internship was to learn everything about the polyhedral
-model, because it was in the subject to use this model to abstract the program we are trying
+model, because it was intended to use this model to abstract the program we are trying
 to optimize. I explain in this section what I've learned about the polyhedral model during
 this internship.
 
 \bigskip
 
 The polyhedral model is (as explained in the thesis~\cite{Bas'12}) a mathematical
-model that allows to represent program part as union of polyhedra and affine sets.
+model that allows to represent program parts as union of polyhedra and affine sets.
 Program parts that can fit the model are called \textit{static control parts} or
 \textit{SCoPs} for short. Scops are generally loop-based, and need to have affine loop bounds,
 and conditions/array subscripts that fit the polyhedral model (they need to be affine).
@@ -344,22 +348,22 @@ S2:             B[i][j] += 42;
         Defining the domain of iteration is great, but it doesn't give us any information
         on the order in which will be executed each statement instance.
 
-        There is different type of ordering relations :
+        There are different types of ordering relations :
         \begin{description}
             \item[Scheduling] is about ordering the statement instances in time by
                 giving them a logical date vector indicating when each will be executed.
-                The data vector is generally read in \textit{lexicographically} order, for example
+                The data vector is generally read in \textit{lexicographical} order, for example
                 $(1,2,3)$ is executed before $(1,2,4)$ but after $(1,1,4)$.
             \item[Allocation] or \textbf{placement} is about ordering statement instances
                 in space by assigning to each statement instances a logical stamp
                 indicating the processor number in which it will be executed.
                 Statement instances not sharing the same logical stamp can be
-                executed in parallel in different processor.
+                executed in parallel in different processors.
         \end{description}
 
         It is possible to express each ordering relations separately,
         but it is also possible to aggregate them together : the result would be
-        a relation between the iterators set and a set of ordering vector which
+        a relation between the iterators set and a set of ordering vectors which
         would have some dimensions allocated to time ordering (scheduling) and
         some other to space ordering (allocation).
 
@@ -397,7 +401,7 @@ S2:             B[i][j] += 42;
                     \end{array}\right)
                     = \vec{0}
                     \right\}$,\\
-                    which can be simplify to $\theta_{S1}(N)(i)=\begin{pmatrix}0\\i\\0\end{pmatrix}$.
+                    which can be simplified to $\theta_{S1}(N)(i)=\begin{pmatrix}0\\i\\0\end{pmatrix}$.
             \item[]
                 $\theta_{S2}(N) = \left\{(i) \to \begin{pmatrix}t^{1}_{S2}\\t^{2}_{S2}\\t^{3}_{S2}\\t^{4}_{S2}\\t^{5}_{S2}\end{pmatrix} \in
                     \mathbb{Z}\times\mathbb{Z}^{3}
@@ -421,18 +425,18 @@ S2:             B[i][j] += 42;
                     \end{array}\right)
                     = \vec{0}
                     \right\}$,\\
-                    which can be simplify to $\theta_{S2}(N)\begin{pmatrix}i\\j\end{pmatrix}=\begin{pmatrix}1\\i\\0\\j\\0\end{pmatrix}$.
+                    which can be simplified to $\theta_{S2}(N)\begin{pmatrix}i\\j\end{pmatrix}=\begin{pmatrix}1\\i\\0\\j\\0\end{pmatrix}$.
         \end{itemize}
         The first dimension for S1 is 0 and for S2 is 1 : it is to ensure that S2
         is always executed after S1. This dimension is also an example of \textit{Scheduling} dimension.
-        In our example, it doesn't matter because S1 and S2 doesn't have any data dependence
+        In our example, it doesn't matter because S1 and S2 don't have any data dependence
         whatsoever, and they could be run in parallel without problem, but for the sake
         of the example, we've imposed that S1 is executed before S2.
 
     \subsection{Access Relations}
         The \textit{Access Relations} model the different memory accesses made 
         in a statement. It maps the statement instances to memory locations
-        for every array reference of a statement. Non-array reference like simple variable
+        for every array reference of a statement. Non-array references like simple variable
         can be seen as 0-dimensional array.
 
         The access relation can be written in the general form :
@@ -447,7 +451,7 @@ S2:             B[i][j] += 42;
         \end{center}
         where 
         \begin{itemize}
-            \item where $\vec{p}$ is the parameter vector.
+            \item $\vec{p}$ is the parameter vector.
             \item $r$ is the number of the reference in the statement (every references are
                 numbered, from left to right generally).
             \item $\vec{\imath_S}$ is the $\dim(\vec{\imath_S})$-dimensional iteration vector
@@ -456,7 +460,7 @@ S2:             B[i][j] += 42;
         \end{itemize}
 
         The read or write nature of the memory access is not expressed in this form,
-        and need to be given alongside the model (for example, to compute data dependences).
+        and needs to be given alongside the model (for example, to compute data dependencies).
 
         %TODO Expliquer les outputs dimensions (si il y en as dans le modèle théorique).
 
@@ -494,18 +498,18 @@ S2:             B[i][j] += 42;
 
     \subsection{Dependence Relations}
     \label{sec:dependence_relations}
-        Data Dependences are necessarily considered, when, for example, we have to identify if a statement
+        Data Dependencies are necessarily considered, when, for example, we have to identify if a statement
         can be parallelized or vectorized (simdized). They are also needed when we try to
-        transform the scattering of a statement : doing that could violate dependences between
+        transform the scattering of a statement : doing that could violate dependencies between
         some statements, and the Dependence Relations (with Violation Relations) can be used to detect such
         violations.
 
-        Fortunately, Data Dependence can be easily represented in the polyhedral model as
+        Fortunately, Data Dependency can be easily represented in the polyhedral model as
         \textbf{Dependence Relation}.
 
         A Dependence Relation represent the fact that some ordered statement iterations
         access the same memory location. The general form of the Dependence Relation of
-        a dependence between a \textit{source} statement $S$ and a \textit{target}
+        a dependency between a \textit{source} statement $S$ and a \textit{target}
         statement $T$ at a depth $d$ is the following (explained after) :
 
         \begin{center}
@@ -552,7 +556,7 @@ S2:             B[i][j] += 42;
         \end{center}
         If, for the statement $S$ and $T$ and with the depth $d$, this relation is not empty
         (meaning that with all these constraints, there is still at least a point in the set
-        this relation represents) then there is a dependence between $S$ and $T$.
+        this relation represents) then there is a dependency between $S$ and $T$.
         
         This matrix seems complicated at first but we are just piling up more and more constraints
         on a linear system. Theses constraints correspond to three sub-relations :
@@ -561,7 +565,7 @@ S2:             B[i][j] += 42;
                 It corresponds to the lines 1-2 of the matrix.
 
                 The \textit{Existence Conition} determines, like in the \textit{Domain Relation},
-                the set of possible iterations for the 2 statements (a dependence couldn't
+                the set of possible iterations for the 2 statements (a dependency couldn't
                 possibly exist between out-of-\textit{Domain} iterations).
 
                 It's just the \textit{Domain Matrix} of the 2 statements split vertically
@@ -570,36 +574,36 @@ S2:             B[i][j] += 42;
                 It corresponds to the lines 3-4-5 of the matrix.
 
                 The \textit{Conflict Condition} determines the equality of the 2 different 
-                memory accesses causing the dependence : if there is a dependence,
+                memory accesses causing the dependency : if there is a dependency,
                 it means that for some iterations, these 2 memory accesses
                 access the same memory location, so it means that for some iterations,
                 the 2 memory accesses are equal.
 
                 To represent that, we add to the system the \textit{Access Matrix} of the 2 memory accesses
-                causing the dependence and then a series a constraints
-                that bind the two access into equality (Identity matrix for the first
+                causing the dependency and then a series of constraints
+                binding the two accesses into equality (Identity matrix for the first
                 \textit{Access Matrix} , and a negative Identity matrix for the second).
             \item Third, there is the \textbf{Causality Condition} of the instances.
                 It corresponds to the line 6-7 of the matrix.
 
-                The \textit{Causality Condition} make sure that the iterations of the
+                The \textit{Causality Condition} makes sure that the iterations of the
                 \textit{source} statement are executed before the ones of the \textit{target} statements
-                involved in the dependence.
+                involved in the dependency.
 
-                We define what is called the \textit{dependence depth} $d$. There is
-                as many possible $d$ as there is of loop in common between the statements $S$ and $T$.
+                We define what is called the \textit{dependence depth} $d$. There are
+                as many possible $d$ as there are of loops in common between the statements $S$ and $T$.
                 If for a value of $d$, the linear system represented by the \textit{Dependence Matrix}
-                has a solution, it means that the loop of depth $d$ carry the dependence.
-                If multiple value of $d$ produce solution to the linear system (so there
+                has a solution, it means that the loop of depth $d$ carry the dependency.
+                If multiple values of $d$ produce solutions to the linear system (so there
                 is multiple \textit{Dependence Relation} for the same statements and
-                memory location/accesses), it means that multiple loops carry the dependence.
+                memory locations/accesses), it means that multiple loops carry the dependency.
 
                 To add the notion of \textit{Causality} we add to the system a series of
-                constraint binding the corresponding \textit{source} and \textit{target}
-                iterators of the loops having a depth lighter than $d$
+                constraints binding the corresponding \textit{source} and \textit{target}
+                iterators of the loops having a depth $d'$ lighter than $d$
                 (with a Identity and negative Identity matrix).
                 For the \textit{source} and \textit{target} iterator of the loop having
-                the depth $d$, instead of an equality, we bind them with inequality :
+                the depth $d$, instead of an equality, we bind them with an inequality :
                 the \textit{source} iterator lighter than or equal to ($\leq$) the \textit{target} iterator.
 
                 It's also possible to force a strict inequality ($<$) by setting the cell
@@ -618,10 +622,10 @@ for(i=1 ; i<N ; i++)
 \end{lstlisting}
         
         For example, in the Listing~\ref{lst:dependence_example}, we can see a Read-after-Write
-        dependence : when $(i=1)$ we write in $A[1]$, and when $(i=2)$ (the next iteration)
+        dependency : when $(i=1)$ we write in $A[1]$, and when $(i=2)$ (the next iteration)
         we read in $A[1]$ (and write in $A[2]$ but the location is different so that's not important here).
 
-        For this dependence, we would have the following \textit{Dependence Matrix} :
+        For this dependency, we would have the following \textit{Dependence Matrix} :
 \begin{center}
 $
         \begin{array}{c:c|c:c|c:c}
@@ -663,26 +667,26 @@ $
     \end{itemize}
     
     If we pass this matrix in any linear solving software (like PIP~\cite{Fea88}) and try to solve it,
-    we would get solutions, meaning that the dependence exists.
+    we would get solutions, meaning that the dependency exists.
 
     \bigskip
 
     That's really one of the most powerful side of the polyhedral model, its ability to
-    compute the different dependences by building linear systems : if there is solution,
-    there is dependence, and if not, there is not dependence. It's powerful because
-    the techniques to build and solve linear system are known and mastered, so the basis
+    compute the different dependencies by building linear systems : if there is a solution,
+    there is a dependency, and if not, there is no dependency. It's powerful because
+    the techniques to build and solve linear systems are known and mastered, so the basis
     of the model is really strong and stable. 
 
 
     \subsection{OpenScop Framework}
-        OpenScop~\cite{openscop} is an open specification that define a file format
+        OpenScop~\cite{openscop} is an open specification that defines a file format
         and a set of data structures to represent a static control part (SCoP).
 
         OpenScop format is intended to be a stable bridge between polyhedral tools
         and optimizers allowing interchangeable tools and flexible toolchains.
 
         A library named \textit{osl} is provided to read/write OpenScop files
-        and manipulate the different data structures the specification define.
+        and manipulate the different data structures the specification defines.
         The file format as well as the library has been designed to accept extensions.
 
         Substrate, the tool I have written during this internship to perform our analysis
@@ -693,7 +697,7 @@ In this section we will present and explain the different properties a statement
 that can characterize similarity. We will then present and discuss the model we chose to model
 those properties.\\
 This list is composed of the properties we had time to study, select and implement,
-and it is of course not exhaustive : other profile type need to be considered in the future.
+and it is of course not exhaustive : other profile types need to be considered in the future.
 \label{sec:statement_profiling}
     \subsection{Data Reuse/Locality}
         In this section, we will explain the basics behind data reuse/locality. We will then
@@ -704,7 +708,7 @@ and it is of course not exhaustive : other profile type need to be considered in
         \subsubsection{Difference between Reuse and Locality}
             It's important to differentiate \textit{reuse} from \textit{locality}.
             We say that there is \textit{reuse} for a data when this data is
-            access multiple time during the execution of a loop nest, during
+            accessed multiple times during the execution of a loop nest, during
             the same iteration or not. It can be from different references or different statements.
             
             When there is reuse, it's possible (but not guaranteed) to have
@@ -735,43 +739,43 @@ for(i=0; i<N ; i++)
 \end{lstlisting}
 
             \paragraph{Self-Temporal}
-                Self-Temporal reuse occurs when the same reference access the same
+                Self-Temporal reuse occurs when the same reference accesss the same
                 data location.
                 
-                For example, in Listing \ref{lst:reuse_example}, the reference \verb'B[i]' carry Self-Temporal
+                For example, in Listing \ref{lst:reuse_example}, the reference \verb'B[i]' carries Self-Temporal
                 reuse :\verb'B[0]',\verb'B[1]',\verb'B[2]' ... \verb'B[N-1]' are accessed
                 \textit{j} times by the same reference \verb'B[i]'.
                 And for the same reason, \verb'B[i+1]' and \verb'B[i+2]' also carry Self-Temporal reuse.
 
             \paragraph{Self-Spatial}
-                Self-Spatial reuse occurs when the same reference access the same
+                Self-Spatial reuse occurs when the same reference accesses the same
                 line in an array (when in row-major). Especially, the space between
                 two accessed data locations should not be greater than a cache line size,
                 or else there won't be any spatial locality.
 
-                For example, in Listing \ref{lst:reuse_example}, the reference \verb'A[i][j]' carry
+                For example, in Listing \ref{lst:reuse_example}, the reference \verb'A[i][j]' carries
                 Self-Spatial reuse.
 
                 Self-Temporal reuse can be considered as a special case of
-                Self-Spatial reuse : accessing the same data location mean that
+                Self-Spatial reuse : accessing the same data location means that
                 the same array line is also accessed.
             \paragraph{Group-Temporal}
                 Group-Temporal reuse occurs when different references access the same
                 data location. It can occur inside a same statement or across different
                 statements.
 
-                For example, in Listing \ref{lst:reuse_example}, the reference
+                For example, in Listing \ref{lst:reuse_example}, the references
                 \verb'B[i]', \verb'B[i+1]' and \verb'B[i+2]' carry Group-Temporal :
-                the data accessed by \verb'B[i+2]' when $i=M$ will be access by
+                the data accessed by \verb'B[i+2]' when $i=M$ will be accessed by
                 \verb'B[i+1]' when $i=M+1$ and by \verb'B[i]' when $i=M+2$.
 
             \paragraph{Group-Spatial}
                 Group-Spatial reuse occurs when different references access the same
                 line in an array (when in row-major). Again, the space between
-                two accessed data location should not be greater than a cache line size,
+                two accessed data locations should not be greater than a cache line size,
                 or else there won't be any spatial locality.
                 
-                For example, in Listing \ref{lst:reuse_example}, the reference
+                For example, in Listing \ref{lst:reuse_example}, the references
                 \verb'B[i]', \verb'B[i+1]' and \verb'B[i+2]' carry Group-Spatial :
                 they all access to different data location, but on the same line.\\
                 \\
@@ -781,10 +785,10 @@ for(i=0; i<N ; i++)
                 can be hard to automatically favor some statements instead of others.
         \subsubsection{Reuse Vector Space}
         \label{sec:wolf_91}
-            The notion of Reuse Vector Space come from Wolf et. al.\cite{Wolf'91} and describe
+            The notion of Reuse Vector Space comes from Wolf et. al.\cite{Wolf'91} and describes
             the vector subspace of the Iteration vector space where the reuse of
-            a reference can be effectively induce locality.
-            There is as many reuse vector space as there is type of reuse.
+            a reference can effectively induce locality.
+            There are as many reuse vector space as there are types of reuse.
 
 \begin{lstlisting}[frame=single, language=C, caption=Simple example, label={lst:simple_example}]
 for(i=0; i<N ; i++)
@@ -796,10 +800,10 @@ for(i=0; i<N ; i++)
 
             For example, in Listing \ref{lst:simple_example}, with the Iteration
             space being spanned by $\{(1,0),(0,1)\}$, the self-spatial reuse vector space of
-            \verb'A[i]' is $\{(1,0)\}$ (ie the {\it i} loop), and the one of \verb'A[j]' is $\{(0,1)\}$
+            \verb'A[i]' is $\{(1,0)\}$ (ie the {\it i} loop), and \verb'A[j]''s is $\{(0,1)\}$
             (ie the {\it j} loop).
 
-            Wolf et. al. use the concept of uniformly generated references proposed
+            Wolf et. al. uses the concept of uniformly generated references proposed
             by Gannon et. al.\cite{Gannon:1988:SCL:50454.50460} for estimating reference
             windows :
             \begin{defn}
@@ -814,12 +818,12 @@ for(i=0; i<N ; i++)
                 where $H$ is a linear transformation and $\vec{c}_a$ and $\vec{c}_b$ are constant vectors.
             \end{defn}
             
-            We can partition references into equivalence class, called \textit{uniformly generated sets},
+            We can partition references into equivalence classes, called \textit{uniformly generated sets},
             when the references operate on the same array, and have the same $H$.
-            We can see $H$ as a part of one of the access function (in the polyhedral model representation) of this statement :
+            We can see $H$ as a part of one of the access functions (in the polyhedral model representation) of this statement :
             it's the access function matrix without the part handling the constant vector.
 
-            For example in Listing \ref{lst:reuse_example}, $B[i]$,$B[i+1]$ and $B[i+2]$ can be each written as
+            For example in Listing \ref{lst:reuse_example}, $B[i]$,$B[i+1]$ and $B[i+2]$ can each be written as
             \begin{center}
                 $
                 \begin{bmatrix}
@@ -861,9 +865,9 @@ for(i=0; i<N ; i++)
                 \end{bmatrix}
                 $.
             \end{center}
-            As we can see, all these reference share the same $H=\begin{bmatrix}1 & 0\end{bmatrix}$,
+            As we can see, all these references share the same $H=\begin{bmatrix}1 & 0\end{bmatrix}$,
             so they all belong to the same class.\\
-            Of course, $B[i]$,$B[i+1]$ and $B[i+2]$ belong to different statement, and in
+            Of course, $B[i]$,$B[i+1]$ and $B[i+2]$ belong to different statements, and in
             our pass, a uniformly generated set would be created for each statement.
 
             The problem with that method, is that it would put the references
@@ -871,7 +875,7 @@ for(i=0; i<N ; i++)
             same $H$, but they don't have the same reuse space at all.
             For example : $C[i][j],C[i-1][j]$ exhibit group-spatial reuse in the $i$ dimension,
             whereas $C[i][j],C[i][j+1]$ exhibit group-spatial reuse in the $j$ dimension. So they
-            should not be group together in the same class.
+            should not be grouped together in the same class.
             \medskip
 
             So the definition of the \textit{uniformly generated set} is not restrictive enough,
@@ -880,17 +884,17 @@ for(i=0; i<N ; i++)
 
 
         \subsubsection{The Simple Algorithm}
-            The \textit{Simple Algorithm}~\cite{Kennedy94maximizingloop} is a
-            optimization algorithm that improve data locality via Loop Fusion.
-            The idea is to fusion vertices of a directed graph when those vertices
+            The \textit{Simple Algorithm}~\cite{Kennedy94maximizingloop} is an
+            optimization algorithm that improves data locality via Loop Fusion.
+            The idea is to fuse vertices of a directed graph when those vertices
             are connected by non-fusion-preventing arcs.
             In this graph, the vertices represent the different loop nests of a program part,
-            and the arcs represent data dependences between statements of different loop nests.
+            and the arcs represent data dependencies between statements of different loop nests.
 
-            If the dependence is fusion-preventing~\cite{Bacon:1994:CTH:197405.197406} or if the loop headers are incompatible,
-            the arc representing the dependence will be marked fusion-preventing.
+            If the dependency is fusion-preventing~\cite{Bacon:1994:CTH:197405.197406} or if the loop headers are incompatible,
+            the arc representing the dependency will be marked fusion-preventing.
 
-            The algorithm is a modification of the greedy algorithm that partition
+            The algorithm is a modification of the greedy algorithm that partitions
             the nodes of the graph without sequentializing a parallel node/loop, and
             is the following (directly taken from~\cite{Kennedy94maximizingloop}:
             \medskip
@@ -904,11 +908,12 @@ for(i=0; i<N ; i++)
                 We determine if it is safe and profitable to move $n \in g_l$ down
                 into another partition $g_h$ as follows.
                 \begin{description}
+                        %TODO check iff
                     \item [Safety.] A node $n \in g_l$ may move to $g_h$ \textit{iff} it
                         has no successors in $g_l$ and there is no fusion-preventing
                         edge $(n,r)$ such that $r \in g_h$ or $r \in g_k$ where
                         $g_k$ must precede $g_h$.
-                    \item [Profitability.] Compute a sum of edges $(m,n), m \in g_l$
+                    \item [Profitability.] Computes a sum of edges $(m,n), m \in g_l$
                         and a sum for each $g_h$ of edges $(n,p)$ such that $p \in g_h$
                         and $n$ may be safely moved into $g_h$. Pick the partition
                         $g$ with the biggest sum. If $g \neq g_l$, move $n$ down into $g$.''
@@ -917,10 +922,10 @@ for(i=0; i<N ; i++)
             
             This algorithm doesn't give us any metric or way to evaluate a statement
             reuse, so it doesn't help use for the reuse evaluation side, but the idea
-            of a dependence graph based greedy algorithm is interesting : with statement
+            of a dependency graph based greedy algorithm is interesting : with statement
             instead of loop nest being the nodes, this kind of greedy algorithm 
-            could fusion statements that are inside different loop nest in the SCoP.
-            It means we would also need to redefine the \textbf{Safety} and \textbf{Profitability}
+            could fuse statements that are inside different loop nests in the SCoP.
+            Meaning we would also need to redefine the \textbf{Safety} and \textbf{Profitability}
             notions of the algorithm.
 
         \subsubsection{Data and Loop Transformations Algorithm}
@@ -932,20 +937,20 @@ for(i=0; i<N ; i++)
             vague), so it isn't applicable in our case and it doesn't give us any metric or way to evaluate the reuse.
         
         \subsubsection{LoopCost Algorithms}
-            The LoopCost algorithm~\cite{McKinley:1996:IDL:233561.233564} provide
+            The LoopCost algorithm~\cite{McKinley:1996:IDL:233561.233564} provides
             us with a cost model that allow to help us chose the right loop transformation like
             loop permutation, loop reversal, loop fusion, loop distribution,
             by comparing the cost with and without the transformation.
             
-            The LoopCost algorithm work like this : 
+            The LoopCost algorithm works like this : 
             Each loop $l$ in a loop nest is considered as a candidate for the innermost
-            position in the nest. For each loop $l$, LoopCost compute and sum the number
-            of cache line access by a group of references (the groups are formed
+            position in the nest. For each loop $l$, LoopCost computes and sums the number
+            of cache line accesses by a group of references (the groups are formed
             using the RefGroup algorithm) when $l$ is placed as the innermost loop.
 
             As a result, we have a cost for each loop when they are considered as innermost.
-            This cost enable to possibility to compare with hard numbers
-            a loop nest before and after some loop transformations, which allow to discard
+            This cost enables the possibility to compare a loop nest with hard numbers 
+            before and after some loop transformations, which allows us to discard
             or apply the transformations if the new cost is worse or better than the
             original cost.
             \bigskip
@@ -954,7 +959,7 @@ for(i=0; i<N ; i++)
             use the number of references in a reference group for the computation
             of the cost, it is not really applicable to our situation.
 
-            Regarding the RefGroup algorithm that partition the array references
+            Regarding the RefGroup algorithm that partitions the array references
             in group, the criteria used are like the ones for \textit{uniformly generated set}
             but a little more restrictive, and we don't need more restrictive, so we won't
             be able to use them.
@@ -962,7 +967,7 @@ for(i=0; i<N ; i++)
             
         \subsubsection{Automatic Polyhedral Parallelization and Locality Optimization Algorithm}
         \label{sec:auto_poly_paral}
-            Let $S_i$ and $S_j$ two statement of a program with a data dependence $e$
+            Let $S_i$ and $S_j$ two statement of a program with a data dependency $e$
             from $S_i$ to $S_j$.\\
             Let $\vec{s}$ and $\vec{t}$ the iterators of respectively $S_i$ and $S_j$.\\
             Let $\theta_{S_i}$ and $\theta_{S_j}$ the scattering function of respectively $S_i$
@@ -974,16 +979,16 @@ for(i=0; i<N ; i++)
 
             According to the paper~\cite{Bondhugula:2008:PAP:1379022.1375595},
             the affine form $\delta_e\left(\vec{s},\vec{t}\right)$ is very significant
-            because it gives us ``the number of hyperplanes the dependence $e$ traverses
+            because it gives us ``the number of hyperplanes the dependency $e$ traverses
             along the hyperplane normal $\theta$. If $\theta$ is used as a space loop to generate tiles
             for parallelization, this function is a factor in the communication
             volume. On the other hand, if $\theta$ is used as a sequential loop, it
             gives us a measure of the reuse distance.''
 
             If there is a upper bound to $\delta_e\left(\vec{s},\vec{t}\right)$,
-            minimizing it (or even nullify it), would be the same as minimizing (or nullify)
+            minimizing it (or even nullify it), would be the same as minimizing (or nullifying)
             the number of hyperplanes that would be communicated as a result of
-            the dependence at the tile boundaries.
+            the dependency at the tile boundaries.
 
             The problem is that minimizing $\delta_e\left(\vec{s},\vec{t}\right)$
             can be really difficult because it ends up in an objective non-linear
@@ -1010,14 +1015,14 @@ for(i=0; i<N ; i++)
             minimal solution to it.
 
             This algorithm doesn't give us any metric or way to evaluate reuse, but instead
-            give us a way to find automatically legal transformations, so we can't use it.
+            give us a way to automatically find legal transformations, so we can't use it.
 
 %        \subsubsection{Ehrhart Polynomial Algorithm}
 %            TODO
 
         \subsubsection{The chosen model for Reuse Profile}
             In the end, to characterize Data Reuse for the Reuse Profile, we decided to
-            group recursively into classes the different accesses of a statement.
+            recursively group into classes the different accesses of a statement.
 
             For that, we reuse the notions of Uniformly Generated Sets used in the paper~\cite{Wolf'91}
             and explained in the section~\ref{sec:wolf_91}, but we propose an addition to it :
@@ -1081,43 +1086,43 @@ for(i=0; i<N ; i++)
     \subsection{Parallelism}
         We say that a statement can be parallelized for a certain loop when it is legal to
         execute some different \textit{instances} of the statement (so with different iterators)
-        on multiple cores at the same time, without violating any dependences. The
+        on multiple cores at the same time, without violating any dependencies. The
         goal (not always possible) of executing multiple instances at the same time is to
         speed up the overall execution of the program.
 
         Unlike \textit{Data Reuse} where we had to find a good way to detect and characterize it,
         the \textit{Parallelism} of a statement doesn't need to be "characterize" :
-        a statement can be either parallelized for a certain loop or it cannot : no more, no less.
+        a statement can either be parallelized for a certain loop or it cannot : no more, no less.
 
         So in the end, the \textit{Parallelism Profile} of a statement is just the list
-        of loop than can be parallelized safely for this statement.
+        of loop that can be parallelized safely for this statement.
         And to determine which loop can be parallelized safely, we just need to analyze
         the \glspl{self-dependence} of the statement. We only analyze \gls{self-dependence}
         because we analyze the statement alone, without any of the other statement of
-        the scop, so the only possible dependences are the one from the statement to itself.
-        Dependences in the polyhedral model are explained in the Section~\ref{sec:dependence_relations}.
+        the scop, so the only possible dependencies are the one from the statement to itself.
+        Dependencies in the polyhedral model are explained in the Section~\ref{sec:dependence_relations}.
        
         \bigskip
 
         Because we analyze the \glspl{self-dependence} of a statement, the only
-        dependence we will find to analyze are Read-after-Write or Write-after-Read dependences :
+        dependence we will find to analyze are Read-after-Write or Write-after-Read dependencies :
         \begin{itemize}
-            \item Read-after-Read dependences doesn't prevent parallelization because there is no
-                change made at the memory location in question, so we don't even look at them.
+            \item Read-after-Read dependencies doesn't prevent parallelization because there is no
+                change made to the memory location in question, so we don't even look at them.
         
-            \item Write-after-Write dependences doesn't concern us here because there is
+            \item Write-after-Write dependencies don't concern us here because there is
                 only one \textit{write} to the memory per statement which means that
                 the \textit{source} and \textit{target} statement of Write-after-Write
-                dependences are always different, which is not out case here.
+                dependencies are always different, which is not out case here.
         \end{itemize}
         
-        So once we've computed all the dependences possible (for all the depth $d$ possible),
-        we need, for all the iterators/loops of the statement, to check if one of the dependences
+        So once we've computed all the dependencies possible (for all the depth $d$ possible),
+        we need, for all the iterators/loops of the statement, to check if one of the dependencies
         is loop-carried :
         \begin{itemize}
             \item A statement can be parallelized for a certain loop if none of its \glspl{self-dependence}
                 are loop-carried.
-            \item In the contrary if any \gls{self-dependence} of a statement is loop-carried for an certain loop,
+            \item On the contrary if any \gls{self-dependence} of a statement is loop-carried for an certain loop,
                 the statement cannot be parallelized for this loop.
         \end{itemize}
         Moreover, if a statement doesn't have \textit{any} dependence, it means that the
@@ -1139,7 +1144,7 @@ for(i=0; i<N ; i++)
         statement in the $l^\text{th}$ iteration dimension
         \begin{itemize}
             \item even when all of their \textit{other} iterators are equal (the "equal" constraints),
-            \item even when the \textit{source instance} and \textit{target instance} of the dependences
+            \item even when the \textit{source instance} and \textit{target instance} of the dependencies
                 in the $l^\text{th}$ must be strictly different (the "strict inequality" constraint),
         \end{itemize}
         then the dependence is loop-carried for the loop $l$.
@@ -1150,13 +1155,13 @@ for(i=0; i<N ; i++)
         
     \subsection{Vectorization}
         \subsubsection{Principles}
-        Vectorization is a special case of Parallelization where we try to unroll a little
-        a loop and transform the scalar operations, that compute only one single pair of
+        Vectorization is a special case of Parallelization where we try to unroll a loop a
+        little and transform the scalar operations, that compute only one single pair of
         operand, to vector operations (SIMD operation : Single Instruction, Multiple Data),
         that compute multiple pair of operand at a time, so that the loop can run a little
         faster and more efficiently.
 
-        One of the condition for a statement to be vectorized is that the memory accesses
+        One of the conditions for a statement to be vectorized is that the memory accesses
         that appear in it should have the same alignment in memory : the address of all the
         accesses modulo the size of vector registers should be the same for all the accesses
         of the statement.
@@ -1165,7 +1170,7 @@ for(i=0; i<N ; i++)
         condition, by considering that compilers are now capable of handling this problem.
 
         Because Vectorization is a special case of Parallelization, the way to detect it
-        is a lot like the way to detect parallelization : it involve the analysis of
+        is a lot like the way to detect parallelization : it involves the analysis of
         the \glspl{self-dependence} of a statement. But unlike Parallelization, here we are
         only interested in a certain number of loops. Those loops are the ones whose iterators
         are used either in :
@@ -1198,31 +1203,31 @@ for(i=0; i<N ; i++)
         \begin{itemize}
             \item If there is no dependence at all, then we can add all the 
                 \textit{candidate loops} to the \textit{Vectorization Profile}.
-            \item If there is dependences, we only look at the dependences that
+            \item If there are dependencies, we only look at the dependencies that
                 are carried by one or more of the \textit{candidate loops}.\\
-                For all the remaining dependences $D$ carried by the loop $l$,
+                For all the remaining dependencies $D$ carried by the loop $l$,
                 if $D$ is a Write-after-Write or Read-after-Write dependence, then $l$
                 is removed from the \textit{candidate loops}.
                 The other kinds of dependence are Write-after-Read Read-after-Read 
-                which doesn't cause any problems for the vectorization, so we can ignore
-                those kinds of dependences.
+                which don't cause any problems for the vectorization, so we can ignore
+                those kinds of dependencies.
         \end{itemize}
         The \textit{candidate loops} that are left are then added to the profile because they
         don't cause any threats to the vectorization.
 
         \bigskip
 
-        The \textit{Vectorization Profile} is in the end just the list of loops that
+        The \textit{Vectorization Profile} in the end is end just the list of loops that
         \textbf{if} they are/become the innermost loop, we can then vectorize the statement.
 
         \subsubsection{Limitations}
         For the \textit{Vectorization Profile}, we have chosen to only analyse the statements
         as if they were the only statement of the loop nest : that's why we only talk
-        about dependences that are from and to the statement.
+        about dependencies that are from and to the statement.
 
-        This approach simplify the problem, but add a limitation to the profile :
+        This approach simplifies the problem, but adds a limitation to the profile :
         a statement could be vectorized if it is considered "alone" but can in fact not
-        be vectorized because it has some dependences with some other statements of the loop
+        be vectorized because it has some dependencies with some other statements of the loop
         nest.
 
         For example, in the following code :
@@ -1237,7 +1242,7 @@ for(i=1 ; i<N ; i++) {
     make the vectorization of S1 illegal.
 
     So if the \textit{Vectorization Profile} is used during an optimization vectorizing
-    some statement, we still need to keep checking for inter-statement dependences.
+    some statement, we still need to keep checking for inter-statement dependencies.
 
     %XXX if the size of the vector register is smaller than minimum of all the access
     %A[i-offset], then we can still vectorize, but it's a borderline case.
@@ -1246,7 +1251,7 @@ for(i=1 ; i<N ; i++) {
         %TODO explain Hyperplane
         A Tiling Hyperplane is an hyperplane according to which we could tile a loop nest.
         
-        There is generally a lot of Tiling Hyperplane possible of a loop nest, and the difficulty
+        There is generally a lot of Tiling Hyperplanes possible for a loop nest, and the difficulty
         is to find the optimal one.
 
         The paper~\cite{Bondhugula:2008:PAP:1379022.1375595}, described in the section~\ref{sec:auto_poly_paral}
@@ -1254,16 +1259,16 @@ for(i=1 ; i<N ; i++) {
         parallelization and locality optimization.
 
         This algorithm is implemented in a program called \textbf{Pluto}~\cite{pluto} (which also
-        use the polyhedral model) and its results are really impressive.
+        uses the polyhedral model) and its results are really impressive.
 
         Because of that, we had the idea to use the Tiling Hyperplane computed by \textit{Pluto}
-        as a property of a statement : after all, the Tiling Hyperplane computed is the way
-        of \textit{Pluto} to see the statement.
+        as a property of a statement : after all, the Tiling Hyperplane computed is
+        \textit{Pluto}'s way of seeing the statement.
 
         The Tiling Hyperplane Profile of a statement would simply be composed
         of the Tiling Hyperplane vectors/matrix \textit{Pluto} has computed for
         it when it is alone : meaning that we remove every other
-        statement of the scop so that Pluto compute the Tiling Hyperplane for this \textit{specific}
+        statement of the scop so that Pluto computes the Tiling Hyperplane for this \textit{specific}
         statement).
 
         %\bigskip
@@ -1293,21 +1298,21 @@ for(i=1 ; i<N ; i++) {
     If the similarity is high, the rate is high, and if the rate is high, we need to
     aggregate the statements.
 
-    Si I had to find a way to rate this similarity : transforming the comparison between
+    So I had to find a way to rate this similarity : transforming the comparison between
     2 profile into a numerical value.
 
     \subsection{Statement Profiling}
-    The analysis pass is the direct implementation of \textit{Profile Type} model explained in the section~\ref{sec:statement_profiling}:
+    The analysis pass is the direct implementation of \textit{Profile Type} model explained in section~\ref{sec:statement_profiling}:
     \begin{itemize}
         \item The Reuse Profile is built by grouping the
-            different memory accesses into array reference group, then uniformly generated set group,
-            then group with the same reuse direction. The harder part here wasn't the
-            implementation but the research part.
+            different memory accesses into array reference groups, then uniformly generated set groups,
+            then groups with the same reuse direction. The harder part here wasn't the
+            implementation but the research.
 
-        \item The Parallelism Profile is built by listing all the loop index that could be
+        \item The Parallelism Profile is built by listing all the loop indexes that could be
             parallelized for the statement. It is done by using the loop carried algorithm
             of the polyhedral model : if for a loop index, not a single one dependence is
-            loop carried by it, then it can be parallelized safely.
+            loop carried by it, then it can be safely parallelized.
             The catch in our case was that the implementation of this algorithm was in
             \textbf{CAnDL}, another library/program of the \textit{periscop} suite (a suite of
             library/program using the OpenScop format). \textit{CAnDL} can compute
@@ -1317,36 +1322,36 @@ for(i=1 ; i<N ; i++) {
             for this function/algorithm.
             
             So I had to fix the implementation without breaking anything.
-            Some parts of the code weren't making any sens, slowing me down because I had
+            Some parts of the code weren't making any sense, slowing me down because I had
             to figure out what I could safely remove, what I couldn't remove, and what I
             had to fix.
 
             In the end, the function is now working, and as a side effect of the time I've taken
-            to fix it, I've added to \textit{CAnDL} a function that compute if a dependence
+            to fix it, I've added to \textit{CAnDL} a function that computes if a dependence
             is loop independent or not.
         \item The Vectorization Profile building algorithm
             , like I explained in the section~\ref{sec:statement_profiling}, is a lot like
             the Parallelism profile building algorithm, but with some additional checks.
-            In the end, the Vectorization profile is simply the list of loop index for which
+            In the end, the Vectorization profile is simply the list of loop indexes for which
             the statement \textit{could be} vectorized if they were the innermost loop of the loop nest.\\
 
             And because the fix of the loop carried function of \textit{CAnDL} was done during
             the implementation of the Parallelism profile, the implementation of the
             Vectorization profile took less time than planned.
         \item The Tiling Hyperplane Profile is not done by \textit{Substrate} but by
-            \textbf{Pluto}~\cite{pluto} : \textit{Substrate} merely use the results of
+            \textbf{Pluto}~\cite{pluto} : \textit{Substrate} merely uses the results of
             \textit{Pluto}'s analysis to get the direction vector of the best Tiling Hyperplane
             \textit{Pluto} could find.
 
-            But adding \textit{Pluto} to the project proved to be more difficult than expect.
-            \textit{Pluto} build all its dependences itself, but I wanted to avoid that and
-            to have Pluto use my versions of these dependences, but I didn't want to tamper
+            But adding \textit{Pluto} to the project proved to be more difficult than expected.
+            \textit{Pluto} builds all its dependencies itself, but I wanted to avoid that and
+            to have Pluto use my versions of these dependencies, but I didn't want to tamper
             to much with its building process. Also, for \textit{Substrate} I've chosen \textbf{cmake}
             as the building system, and \textit{cmake} proved to be difficult to deal with in these
             sort of case.
 
-            In the end, I gave in because I was losing too much time, and I let \textit{Pluto} builds
-            its own dependences, even if it meant a lot of useless compilations.
+            In the end, I gave in because I was losing too much time, and I let \textit{Pluto} build
+            its own dependencies, even if it meant a lot of useless compilations.
     \end{itemize}
     
     \subsection{Similarity rating algorithms}
@@ -1355,30 +1360,30 @@ for(i=1 ; i<N ; i++) {
     \begin{itemize}
         \item We rate the similarity between 0.0 and 1.0 for each of the 2 statements' profile types
             (the rating algorithms are described later).
-        \item We use those rate to compute a weighted average.
-        \item We compare the result of the weighted average to the minimal rate necessary
+        \item We use those rates to compute a weighted average.
+        \item We compare the result of the weighted average to the minimal rates necessary
             to aggregate and if it is greater or equal to it, we aggregate the statements.
     \end{itemize}
     So the user has to give to the program the weight of each profile type as well as the
-    minimal value the weighted average rate need to be to aggregate.
+    minimal value the weighted average rate needs to be to aggregate.
 
 
-    I choose to go with the weighted average rate because it allow us and the users
+    I choose to go with the weighted average rate because it allows us and the users
     to have a large control over the way \textit{substrate} handles the aggregation.
     Another reason was that with the proliferation of profile types, we didn't have
     any concrete idea to automatically weight the different profile types, so I decide
-    to simply give the manual control over it.
+    to simply give manual control over it.
         \subsubsection{Data Reuse}
             Just a quick reminder, the Reuse Profile is built as the following : for all memory accesses of
             a statement, we first group them by reference, then by Uniformly Generated Set,
-            then by reuse direction. The Reuse Profile Rating Algorithm simply count
+            then by reuse direction. The Reuse Profile Rating Algorithm simply counts
             the number of accesses of a statement that would belong to the same reuse
             direction group (so also the same reference group and Uniformly Generated Set group)
             of the other rated statement.
             
             In other words, the algorithm counts the accesses in direction group that match
             the same group in the other statement. If a statement has a direction group that doesn't
-            have any matching group with the other statement, then the number of access contained
+            have any matching group with the other statement, then the number of accesses contained
             in this group are not counted.
 
             We then take this counter and divided it by the total number of accesses of
@@ -1424,16 +1429,16 @@ for(i=0 ; i<N ; i++)
         CPU cache is big enough, $43\%$ of the memory accesses lead to \textbf{cache hits}.
             
         \subsubsection{Parallelism}
-            Because the Parallelism Profile of a statement is simply the list of loop
+            Because the Parallelism Profile of a statement is simply the list of loops
             which could be legally parallelized for the statement, we chose to count the
-            loop in common that could be parallelized for both statements, and then
-            divide that by the total number of loop that could be parallelized for either one
-            or the other statement :
+            loops in common that could be parallelized for both statements, and then
+            divide that by the total number of loops that could be parallelized for either
+            of the statements :
             \begin{center}
                 $ \mathrm{Parallelism\_Rate} =  \dfrac{\mathrm{Card}( {PP_1} \cap {PP_2})}{\mathrm{Card}({PP_1} \cup {PP_2})}$
             \end{center}
-            with $PP_1$ being the parallelism profile of the first statement, and $PP_2$ the
-            one of the second statements.
+            with $PP_1$ being the parallelism profile of the first statement, and $PP_2$ 
+            the second statements'.
 
             \bigskip
 
@@ -1458,13 +1463,15 @@ for(i=0 ; i<N ; i++)
         \end{center}
 
         \subsubsection{Vectorization}
-            Because the Vectorization Profile is, like the Parallelism Profile, simply a list of loop, the rating algorithm for the Vectorization Profile is the same as the one for the Parallelism Profiles :
+            Because the Vectorization Profile is, like the Parallelism Profile, 
+            simply a list of loops, the rating algorithm for the Vectorization Profile
+            is the same as the one for the Parallelism Profiles :
             \begin{center}
                 $ \mathrm{Vectorization\_Rate} =  \dfrac{\mathrm{Card}( {VP_1} \cap {VP_2})}{\mathrm{Card}({VP_1} \cup {VP_2})}$
             \end{center}
             with $VP_1$ and $VP_2$ the Vectorization Profile of respectively the first and second rated statements.
         \subsubsection{Tiling Hyperplane}
-            Because the Tiling Hyperplane Profile is simply the list of vector
+            Because the Tiling Hyperplane Profile is simply the list of vectors
             Pluto has computed for the Hyperplane, we've decided to compute the strict
             equality for the rating algorithm : 
             \begin{center}
@@ -1491,7 +1498,7 @@ for(i=0 ; i<N ; i++)
             \begin{itemize}
                 \item First we try to compare the Reference groups of the 2 Reuse Profiles :
                     if for the Reference group of a profile there is a Reference group in
-                    the other profile that have accesses to the same array reference, then
+                    the other profile that has accesses to the same array reference, then
                     we recursively aggregate these 2 Reference groups. If there is no
                     match, then we just add the Reference group to the new Reuse Profile.
                 \item We then do the same for the Uniformly Generated Set groups of the
@@ -1502,16 +1509,16 @@ for(i=0 ; i<N ; i++)
                 \item And finally we do the same for the Direction group.
             \end{itemize}
             
-            Or in other word, we just fusion matching Direction groups,
+            Or in other word, we just fuse matching Direction groups,
             and add the rest non-matching groups without touching them.
         \subsubsection{Parallelism}
             In the case of the Parallelism Profile, we compute the intersection between
-            the list of loop from the first and second Parallelism Profile. The result
+            the list of loops from the first and second Parallelism Profile. The result
             of the intersection is the Parallelism Profile of the newly aggregated statement.
         \subsubsection{Vectorization}
             Because the Vectorization Profile is very similar to the Parallelism Profile, 
             the Profile Aggregation Algorithm is the same : the intersection between the
-            list of loop from the first and second Vectorization Profile, with the result
+            list of loops from the first and second Vectorization Profile, with the result
             being the Vectorization Profile of the newly aggregated statement.
         \subsubsection{Tiling Hyperplane}
             In the case of the Tiling Hyperplane Profile, because it is so tied to how
@@ -1527,8 +1534,8 @@ for(i=0 ; i<N ; i++)
             the same \textit{Domain Relation} and \textit{Scattering Relation} than the first
             statement. For the \textit{Access Relations} of the result statement, we
             are computing the union of \textit{Access Relations} of the 2 aggregated statements :
-            if there is duplicate \textit{Access Relations}, we only keep one copy.
-            By doing so, we decrease the overall number of dependences between statements,
+            if there are duplicate \textit{Access Relations}, we only keep one copy.
+            By doing so, we decrease the overall number of dependencies between statements,
             thus decreasing the complexity of the representation.
             
 
@@ -1546,19 +1553,19 @@ for(i=0 ; i<N ; i++)
         \subsubsection{Successive Statements Aggregation}
             The Successive Statements Aggregation Algorithm (SSAA) iterate through
             the statements of a scop, from the first statement of the scop to the last.
-            For each statement S1, it look at the next statement S2 in the scop, and
-            check if :
+            For each statement S1, it looks at the next statement S2 in the scop, and
+            checks if :
             \begin{itemize}
                 \item S1 and S2 share the same Domain Matrix.
                 \item S1 and S2 share the same Scattering Matrix, and the same beta depth
                     (i.e. they are in the same loop nest and have the same depth in that nest).
             \end{itemize}
-            If these conditions are met, SSAA then rate the similarity between S1 and S2,
+            If these conditions are met, SSAA then rates the similarity between S1 and S2,
             and if the rate is greater or equal to the minimal rate the user gave to \textit{Substrate}
-            then it aggregate S1 and S2 into S3. S3 then take the place of S1, and everything start
+            then it aggregates S1 and S2 into S3. S3 then takes the place of S1, and everything starts
             over.
 
-            If the conditions are not met, then S2 take the place of S1 and everything start over.
+            If the conditions are not met, then S2 takes the place of S1 and everything starts over.
             
 
 \section{Experiments and Results}
@@ -1566,19 +1573,19 @@ In this section, we will discuss the experiments we've conducted and the consequ
 of their results.
 We need to keep in mind in this section that currently, only the aggregation strategy 
 "Successive Statement Aggregation Algorithm" (SSAA) is implemented and used by \textit{Substrate}.
-So when we say than \textit{Substrate} is aggregating statement, it is implied that it uses
+So when we say than \textit{Substrate} is aggregating statements, it is implied that it uses
 the SSAA.
 
 \bigskip
 
 From the beginning, we wanted to beat \textit{Pluto}, which is consider as
-one of, if not THE one, best optimizer available today.\\
+one of, if not \textbf{the}, best optimizer available today.\\
 Of course, it is impossible for us, at least for now, to go completely without using \textit{Pluto}:
 we still use \textit{Pluto} to optimize, but it now takes its input from us, and does
 not come first.
 
-What we do is that we give to \textit{Pluto} the scop we have optimized with \textit{Substrate}.
-We then take the optimized code it to produce from our optimized scop,
+What we do is that we give \textit{Pluto} the scop we have optimized with \textit{Substrate}.
+We then take the optimized code it produces from our optimized scop,
 and compare its performance with the optimzed code \textit{Pluto} would have produce from
 the original code, without our help.
 
@@ -1603,7 +1610,7 @@ for (i = 0; i < N; i++) {   //L1
 }
 \end{lstlisting}
 we can that S3 and S4 share a lot of data reuse. But if we give this code to \textit{Pluto},
-it will separate S3 and S4 in 2 different parallel loop, loosing the data locality, as you
+it will separate S3 and S4 in 2 different parallel loops, loosing the data locality, as you
 can see in Listing~\ref{lst:pluto_conventional_beamforming} :
 \begin{minipage}[t]{0.45\textwidth}
 \begin{lstlisting}[frame=single, language=C, basicstyle=\scriptsize, caption={Conventional Beamforming kernel optimized by Pluto}, label={lst:pluto_conventional_beamforming}]
@@ -1660,19 +1667,19 @@ shared by them.
 
 \bigskip
 
-All of this to explain why Listing~\ref{lst:original_conventional_beamforming} became one
-of the program of our benchmark suit. But we needed more program, and those program need to
+All of this explains why Listing~\ref{lst:original_conventional_beamforming} became one
+of the program of our benchmark suit. But we needed more programs, and those programs needed to
 fit the polyhedral model, so decided to use the ones provided by the \textbf{PolyBench},
-the Polyhedral Benchmark suite, which contains a lot of different code, all of them fitting
-the polyhedral model. It was also the occasion to try and see how many program of the \textit{PolyBench}
-was affected by \textit{Substrate} : if it was even possible to aggregate some of their statements.
+the Polyhedral Benchmark suite, which contains a lot of different codes, all of them fitting
+the polyhedral model. It was also the occasion to try and see how many programs of the \textit{PolyBench}
+were affected by \textit{Substrate} : if it was even possible to aggregate some of their statements.
 
 What we found was that only 7 programs out of the 30 of the \textit{PolyBench} are eligible
  for our benchmark suit : bicg.c , correlation.c, covariance.c, deriche.c, durbin.c, gesummv.c, symm.c.
 The other programs of \textit{PolyBench} were not eligible because none of their statements could be
 aggregated by \textit{Substrate}, even when run with the lowest minimum aggregation rate possible : 0.0.
-The reasons for that are that these programs are either too short, either every of their
-successive statements have different \textit{Domain Matrix} or either they have no similarity at all.
+The reasons for that are that these programs are either too short, each of their
+successive statements have different \textit{Domain Matrix} or they have no similarity at all.
 All of these reasons resulting in zero aggregation. It is however important to remark that
 this number could possibly change with an aggregation strategy different from SSAA.
 
@@ -1694,27 +1701,27 @@ We were interested to see how many statement were aggregated per Profile Type an
 aggregation rate. The results are shown in the next pages.
 
 We can already notice that bicg.c and symm.c (Figure~\ref{fig:nb_stmts:bicg}|\ref{fig:nb_stmts:symm})
-doesn't show a lot of similarity : just some reuse for low aggregation rate, but that's all.
+don't show a lot of similarity : just some reuse for low aggregation rate, but that's all.
 The same can be said for durbin.c (Figure~\ref{fig:nb_stmts:durbin}) : the only profile type
 inducing aggregation is Tiling Hyperplane, but as we said before this Profile Type should not
 be used alone.
-What it means is that \textit{Substrate} is not really useful for these program. Even though
-it can aggregate some statement, their similarity is too low to be useful. On the contrary
-it could be harmful because it could prevent good optimization to happen.
+What it means is that \textit{Substrate} is not really useful for these programs. Even though
+it can aggregate some statements, their similarity is too low to be useful. On the contrary
+it could be harmful because it could prevent good optimization from happening.
 
-gesummv.c seems promising because it show enough similarity for aggregation even at high
+gesummv.c seems promising because it shows enough similarity for aggregation even at high
 minimal aggregation rate. Only data reuse is left behind, with statements aggregation only
 for low minimal aggregation rate.
 
 The next 3 programs (conventional\_beamforming.c, correlation.c, covariance.c) show a lot of
 similarity : there is aggregation even with high minimal aggregation rate ( 0.6), and
-there is generally 3 Profile Type inducing these aggregation, meaning that those aggregated 
+there is generally 3 Profile Type inducing these aggregations, meaning that those aggregated 
 statements share similarity for more than one or two of their properties.
 
-And finally there is deriche.c (Figure~\ref{fig:nb_stmts:deriche}). deriche.c show good
+And finally there is deriche.c (Figure~\ref{fig:nb_stmts:deriche}). deriche.c shows good
 Data Reuse and Tiling Hyperplane similarity.\\
 
-To be clear, these results only show us how much useful \textit{Substrate} could \textbf{potentially} be.
+To be clear, these results only show us how useful \textit{Substrate} could \textbf{potentially} be.
 To be sure, we need to confront these result to the time we get for them during their optimization by Pluto
 and during their execution.
 
@@ -1754,8 +1761,8 @@ and during their execution.
 \subsection{Speedup of Pluto's runtime}
 \label{sec:speedup_pluto}
 
-We know that aggregating statements reduce the complexity of the polyhedral representation
-of a program, because it means less statements and less dependences (because in the case
+We know that aggregating statements reduces the complexity of the polyhedral representation
+of a program, because it means less statements and less dependencies (because in the case
 of statements sharing identical memory accesses, the duplicate accesses are removed when aggregated).
 But we wanted to see if a less complex polyhedral representation really leads to shorter
 times of optimization, at least from \textit{Pluto}.
@@ -1764,7 +1771,7 @@ times of optimization, at least from \textit{Pluto}.
 
 To test that, we wrote a script that calls \textit{Pluto} to optimize every optimized scop produced
 by \textit{Substrate} in the section~\ref{sec:nb_stmt} (so per Profile Type and minimal aggregating rate),
-and record the time it took. The script then do the same but this time with the scop of
+and record the time it took. The script then does the same but this time with the scop of
 the original source code of the program, so \textbf{not optimized} by \textit{Substrate}.\\
 Every time \textit{Pluto} was called was with the option \verb'--parallel', and the benchmark
 was run on a T9400 (Intel Core 2 Duo, 2.53GHz) with 2GB of DDR2.
@@ -1779,8 +1786,8 @@ If we do that, we can see that almost every time statements are aggregated in a 
 there is a speedup of Pluto's runtime. The speedup is generally around 1.2 (bicg.c, symm.c, durbin.c, covariance.c),
 but it can get higher like 1.5 for correlation.c and 1.9 for deriche.c . It seems like there
 is a correlation between the number or percentage of aggregated statements in a program and
-the speedup we get for \textit{Pluto}'s runtime : higher is the percentage of aggregation,
-higher is the speedup.
+the speedup we get for \textit{Pluto}'s runtime : the greater the percentage of aggregation,
+the greater the speedup.
 
 \bigskip
 
@@ -1790,7 +1797,7 @@ for optimizer.
 
 \bigskip
 
-Of course, we need to show that the time we lose when \textit{Substrate} optimize a scop
+Of course, we need to show that the time we lose when \textit{Substrate} optimizes a scop
 doesn't outweigh the time we gain with \textit{Pluto}. This is not done yet, but we are planning
 to do it before the end of the internship.
 
@@ -1840,18 +1847,18 @@ optimized by \textit{Pluto} alone, to see if we can get a speedup.\\
 The code were compiled by gcc with the options \verb'-O3 -lm -fopenmp', and were run for
 the benchmark on a Q6600 (Intel Quad, 2.40GHz, 8Mo L2) with 4GB DDR2 667Mhz.
 
-The results we got can be found in the next pages. 
+The results can be found in the next pages. 
 
 \bigskip
 
 From the 8 programs of our benchmark suit, only conventional\_beamforming.c,
 correlation.c and covariance.c show significant speedup with respectively an average speedup of
-1.5, 1.7 and 1.65. The other programs of the benchmark show a average speedup of 1, meaning
-that they doesn't run any slower of faster than the optimized code produced by \textit{Pluto} alone,
-which indicate that even though we find similarity and aggregate accordingly to it, \textit{Pluto}
+1.5, 1.7 and 1.65. The other programs of the benchmark show an average speedup of 1, meaning
+that they don't run any slower of faster than the optimized code produced by \textit{Pluto} alone,
+which indicates that even though we find similarity and aggregate accordingly to it, \textit{Pluto}
 could have done it without us.
 
-But these results are also showing that our optimization pass is really working, even if
+But these results also show that our optimization pass is really working, even if
 it's on limited cases, and that when it works, the results are really encouraging.
 
 %\newgeometry{
@@ -1896,27 +1903,27 @@ We've started with the idea that similar or \textit{near behaving} statements sh
 aggregated (considered as one instead of two). So we had to come up with a way to characterize
 the "similarity" between two statements. For that purpose, we've proposed a model where
 each statement is associated with a list of profile built during the analysis pass.
-Each profile correspond to a different property a statement can have like \textit{Data Reuse},
+Each profile corresponds to a different property a statement can have like \textit{Data Reuse},
 \textit{Parallelism} etc...\\
 These profiles are a way to quantify or at least measure those properties, and this quantification
-allow us to compare the profiles of 2 statements, with numbers. By comparing the profiles
+allows us to compare the profiles of 2 statements, with numbers. By comparing the profiles
 of 2 statements, we are able to compute the Similarity Rate between them, and with that we're
 able to characterize the similarity between 2 statements.\\
 We have successfully implemented in \textit{Substrate} the profiles and rating algorithms of :
 \textit{Data Reuse}, \textit{Parallelism}, \textit{Vectorization}, \textit{Tiling Hyperplane}.
 
-The next things we needed to do was to find Aggregation Strategies. An Aggregation Strategy
-determine the way we plan to rate the similarity and aggregate the statements in a scop : in what
+The next thing we needed to do was to find Aggregation Strategies. An Aggregation Strategy
+determines the way we plan to rate the similarity and aggregate the statements in a scop : in what
 order, with or without randomness, with or without human help etc...\\
 For now, only one Aggregation Strategy is implemented in \textit{Substrate},
 and it is "Successive Statements Aggregation Algorithm" (SSAA).
-SSAA try to aggregate only successive statements, from the first to the last
+SSAA tries to aggregate only successive statements, from the first to the last
 statement of the scop, and even though it is a relatively simple algorithm, the results we
 are getting by using it are promising.\\
 Even though we've seen that our approach is not always applicable, when it does
 we have noticed good runtime speedups, and an overall speedup of the time taken by \textit{Pluto}
 to optimize after us, when we were able to aggregate some statements. It indicates that our idea,
-our optimization pass show good potential and than we should pursue our research on it.
+our optimization pass shows good potential and than we should pursue our research on it.
 
     \subsection{What this internship has brought to me}
         I'm happy to say that I have learn a lot of and about new things during this internship :
@@ -1924,12 +1931,12 @@ our optimization pass show good potential and than we should pursue our research
         in the polyhedral model, Tiling Hyperplane, and some other.\\
         To do that, I had to to read, understand and summarize scientific papers which made
         me a little bit used to it.
-        One of my goal was to learn and discover new things about compilation and optimization,
+        One of my goals was to learn and discover new things about compilation and optimization,
         and this goal is clearly achieved for me.
 
         I also wanted to know if I had what it takes to work in the Research and if I wanted
         to try to do a PhD thesis about compilation and optimization. This internship gave me
-        the opportunities to answer some of my question and even though some of them were
+        the opportunities to answer some of my questions and even though some of them were
         not answered, I'm still glad to have learned things about myself.\\
         Without this internship, I think I would have never tried to apply for a PhD thesis.
 
@@ -1944,20 +1951,20 @@ our optimization pass show good potential and than we should pursue our research
         \textbf{this} free. But I am autonomous by nature so I've quickly picked up the pace.
 
         And finally, there is one more thing I did not expect to do : practice my English skills.\\
-        Because the ICPS team has a lot of foreigner, English is used a lot, and it has forced
-        me to practice my English, to speak and understand people speaking with different accent.
+        Because the ICPS team has a lot of foreigners, English is used a lot, and it has forced
+        me to practice my English, to speak and understand people speaking with different accents.
         And of course I also had to practice my writing with this report.
         I am now more confident about my skills and I really less afraid to speak in English
-        anymore : I know more about my strengths and weaknesses in English, and I'm not that
+        : I know more about my strengths and weaknesses in English, and I'm not that
         afraid anymore to speak in English.
 
 
 \section{Future Works}
 \label{sec:future_works}
-At this point in the internship and for this subject, there is still many
-questions to answer, problems to solve and many opportunities of improvement.
-In this section, we want to mention what ideas we have for future works on \textit{Substrate},
-what could be done before the end of the internship, and what would conceivable with more time.
+At this point in the internship and for this subject, there are still many
+questions to answer, problems to solve and many opportunities for improvement.
+In this section, we want to mention which ideas we have for future works on \textit{Substrate},
+what could be done before the end of the internship, and what would be conceivable with more time.
     \subsection{Additional Profiles Types}
         First, we would like to add more Profile Types to the Profile of the statements,
         like \textbf{Register Pressure}. It could be the key to better aggregations and would
@@ -1968,25 +1975,27 @@ what could be done before the end of the internship, and what would conceivable 
         computation of the \textit{Similarity Rate}.
     \subsection{Additional Aggregation Strategies}
         There is only one Aggregation Strategy implemented in \textit{Substrate}, but
-        there is still some things we could try. Were would like to 
-        \paragraph{Successive Statements Aggregation with Greedy Algorithm}
+        there are still some things we could try :
+        \begin{enumerate}
+        \item[Successive Statements Aggregation with Greedy Algorithm]
             Instead of trying to aggregate the statements from the first to the last
             of the scop being optimized, maybe we should try to use a greedy algorithm
-            to chose which successive statements of the scop should be aggregated first : the
-            the 2 successive statements that show the best Similarity Rate are aggregated
-            first, then we pick the new 2 successive statements with the best Similarity Rate etc...
+            to chose which successive statements of the scop should be aggregated first :
+            the 2 successive statements showing the best Similarity Rate are aggregated
+            first, then we pick the next 2 successive statements with the best Similarity Rate etc...
             until the Similarity Rate between all successive statements are below the minimum rate.\\
-        \paragraph{Statements Aggregation using Graphs with Greedy Algorithm}
+        \item[Statements Aggregation using Graphs with Greedy Algorithm]
             The \textit{Successive Statements Aggregation with Greedy Algorithm} only
-            try to aggregate successive statements, statements with the same domain,
+            tries to aggregate successive statements, statements with the same domain,
             the same scattering and the same beta depth, but maybe we could try to
             use the Greedy Algorithm with the Similarity Rate between all statements,
             and try to move and relocate some statements (if the move is legal),
             making them successive, then aggregating them.
-        \paragraph{Statements Aggregation using Neural Network}
-            We could try to use Neural Network or other Genetic Algorithm, instead
-            of Greedy Algorithm, to chose which statement needs to be aggregated to
+        \item[Statements Aggregation using Neural Network]
+            We could try using a Neural Network or other Genetic Algorithms, instead
+            of Greedy Algorithm, to chose which statements need to be aggregated to
             maximize the overall similarity of the scop.
+    \end{enumerate}
     \subsection{Too much different Statement Separator Program}
         One of the goal of this internship was to find a way to aggregate statements
         of a scop to trigger better optimizations, or prevent bad optimizations or even
