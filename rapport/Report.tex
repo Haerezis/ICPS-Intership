@@ -36,6 +36,7 @@
 \usepackage[protrusion=true,expansion=true]{microtype}  
 \usepackage{amsmath,amsfonts,amsthm} % Math packages
 \usepackage{graphicx}   
+\usepackage{import}
 \usepackage{grffile}
 \usepackage{float}
 \usepackage{url}
@@ -92,7 +93,7 @@
 }
 \date{}
 \makeglossaries
-
+\DeclareUnicodeCharacter{00A0}{ }
 %%% Begin document
 \begin{document}
 %TODO Fill glossary and add link to glossary for used word
@@ -111,7 +112,28 @@ Computing) of the ICube laboratory at the university of Strasbourg, and the CAMU
 (Compilation for MultiCore Architectures) at Inria, the French Institute for Research
 in Computer Science.
 
-ICPS/CAMUS focuses at providing developers with theoretical and software
+ICube is a laboratory created in 2013 and placed under the co-supervision of the Univertisy of
+Strasbourg, the CNRS, the ENGEES and INSA of Strasbourg.
+ICube resulted from the consolidation of four former laboratories, namely LSIIT, InESS, IMFS and IPB-LINC,
+and aim at bringing together researchers in the fields of engineering science, computer science,
+and medical science with imaging as unifying theme.
+
+With around 500 members and under the direction of Michel de Mathelin, ICube is composed of
+four different departments, the Computer Science Research Department (D-IR), the
+Imaging, Robotics, Remote Sensing and Biomedical Department (D-IRTS), the 
+Solid-State Electronics, Systems and Photonics Department (D-ESSP) and the 
+Department of Mechanics (D-M).
+
+ICPS (Informatique et Calcul Parallèle et Scientifique)
+is one the 5 research team of the Computer Science Research Department of ICube and is
+under the supervision of Philippe Clauss.
+
+ICPS research group aspires to contribute to state-of-the-art techniques and
+technologies in the field of high performance computing with an area of expertise lying
+in the parallelization and optimization of programs.
+
+ICPS hosts as a subset of the team, the INRIA team-project CAMUS.
+The ICPS/CAMUS group focuses at providing developers with theoretical and software
 tools to develop efficient applications for parallel architectures without sacrificing
 productivity.
 
@@ -699,6 +721,8 @@ and it is of course not exhaustive : other profile type need to be considered in
             functions/subscripts (for array references) are written, whereas \textit{locality} is
             inherent to the iterations order.
 
+\medskip
+
         \subsubsection{Types of Reuse}
             
 \begin{lstlisting}[frame=single, language=C, caption=Reuse example, label={lst:reuse_example}]
@@ -1049,10 +1073,11 @@ for(i=0; i<N ; i++)
         \end{itemize}
         
         Because an image worth a thousand words, the Reuse Profile of S1 would look like this :
-        \textbf{!! TODO : IMAGE REPRESENTANT LES CLASSES !! }
-        %TODO graphviz
-
-
+        \begin{figure}[H]
+            \caption{Reuse Profile example for Listing~\ref{lst:rp_example_0}}
+            \centering
+            \includegraphics[width=\columnwidth]{images/Reuse_Profile_example1.pdf}
+        \end{figure}
     \subsection{Parallelism}
         We say that a statement can be parallelized for a certain loop when it is legal to
         execute some different \textit{instances} of the statement (so with different iterators)
@@ -1368,38 +1393,18 @@ for(i=0 ; i<N ; i++)
         C[i][j] = A[i][j+2];                                //S2
     }
 \end{lstlisting}
-        \textbf{!! TODO : IMAGE REPRESENTANT LE PROFILE !!}
-            %TODO graphviz
         In this example, S1 would have the following Reuse Profile :
-        \begin{center}$
-            \{
-                \{ 
-                    \{A[i][j],A[i][j+1]\},
-                    \{A[i+1][j]\}
-                \}
-            \}
-            \{
-                \{
-                    \{B[i]\}
-                \}
-                \{
-                    \{B[2*i]\}
-                \}
-            \}$
-        \end{center}
+\begin{figure}[H]
+    \center
+    \includegraphics[width=\columnwidth]{images/Reuse_Profile_example2.pdf}
+    \caption{Graphical represention of the Reuse Profile of S1}
+\end{figure}
             and S2 would have the Reuse Profile :
-        \begin{center}$
-            \{
-                \{
-                    \{C[i][j]\}
-                \}
-            \}
-            \{
-                \{
-                    \{A[i][j+2]\}
-                \}
-            \}$
-        \end{center}
+\begin{figure}[H]
+    \center
+    \includegraphics[width=0.7\columnwidth]{images/Reuse_Profile_example3.pdf}
+    \caption{Graphical represention of the Reuse Profile of S2}
+\end{figure}
         we can see that the group ${A[i][j],A[i][j+1]}$ of S1 matches the group ${A[i][j+2]}$
         of S2 : so we count $3$. There is no other match between the groups of the 2 statements,
         so the final value of the counter is $3$. The total number accesses is $7$, so the
